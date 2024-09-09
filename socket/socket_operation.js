@@ -27,11 +27,11 @@ function findDataSocketFull(name, io, isInit,customLimit) {
       let ips = result.map(item => parseInt(item.ip, 10));
       let member = result.map(item => (item.member));
       if (isInit == true) {
-        console.log('findDataSocketFull: receive data each 5s')
+        // console.log('findDataSocketFull: receive data each 5s')
         io.emit(name, member, [ips, oldCredits, newCredits]);
       }
       if (!areArraysEqual(oldCredits, newCredits)) {
-        console.log(`findDataSocketFull: data changed`);
+        console.log(`-findDataSocketFull: data changed`);
         io.emit(name, member, [ips, oldCredits, newCredits]);
         oldCredits = newCredits;
       }

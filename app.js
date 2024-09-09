@@ -18,8 +18,9 @@ app.use(cors())
 const routerAPI = require('./api')
 app.use('/api', routerAPI)
 //USE MONGODB DATABASE
-const config = require('./mongodb/mongo_config')
-config.connectDB();
+require('./mongodb/mongo_config').connectDB();
+
+//RANKING ROUTE
 const rankingRoutes = require('./mongodb/mongo_operation');
 app.use('/api', rankingRoutes);
 

@@ -4,7 +4,7 @@ const mongoose = require('mongoose')
 const AutoIncrementFactory = require('mongoose-sequence');
 const username = "LeHuuDan99";
 const password = "3lyIxDXEzwCtzw2i";
-const database = "Tournament";
+const database = "Tournament_Slot";
 const URL = `mongodb+srv://${username}:${password}@clustervegas.ym3zd.mongodb.net/${database}?retryWrites=true&w=majority`;
 const DB_OPTIONS = {
 useNewUrlParser: true,
@@ -22,10 +22,10 @@ const connectDB = async () => {
       URL,
       DB_OPTIONS
     )
-    console.log(`Connected to mongoDB TNM!`);
+    console.log(`Connected to mongoDB SLOT TNM!`);
     return connect;
   } catch (error) {
-    console.log('Cannot connect Tournament Server')
+    console.log('Cannot connect TNM Server')
     process.exit(1)
   }
 }

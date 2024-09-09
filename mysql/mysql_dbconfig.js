@@ -23,7 +23,7 @@ connection.getConnection((err, conn) => {
       return;
     }
 
-    console.log('Connected to MySQL DB!');
+    console.log('Connected to MySQL DB SLOT TNM!');
     // Don't forget to release the connection when you're done with it
     conn.release();
   } catch (error) {
@@ -33,6 +33,40 @@ connection.getConnection((err, conn) => {
     // console.log('finally connection')
   }
 });
+
+
+
+//SHOW ALL TABLE & FIELDS 
+function getAllTables() {
+  connection.query('SHOW TABLES', (err, results) => {
+    if (err) {
+      console.error('Error fetching tables:', err.message);
+      return;
+    }
+    const tables = results.map(row => Object.values(row)[0]);
+    console.log('Tables in the database:', tables);
+
+    // Now fetch columns for each table
+    tables.forEach(table => {
+      getTableColumns(table);
+    });
+  });
+}
+// Function to get all columns for a specific table
+function getTableColumns(table) {
+  connection.query(`SHOW COLUMNS FROM ${table}`, (err, results) => {
+    if (err) {
+      console.error(`Error fetching columns for table ${table}:`, err.message);
+      return;
+    }
+
+    console.log(`Columns in ${table}:`, results);
+  });
+}
+
+
+// Call the function to list all tables and columns
+// getAllTables();
 
 
 

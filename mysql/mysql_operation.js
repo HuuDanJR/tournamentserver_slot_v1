@@ -478,6 +478,79 @@ async function deleteStationData(ip, callback) {
 
 
 
+async function findSetting(callback) {
+  let query = `SELECT * FROM setting`;
+  try {
+    await connection.getConnection(function (err, conn) {
+      if (err) {
+        console.log(`getConnection error : ${err}`)
+      }
+      connection.query(query, function (err, result, fields) {
+        if (err) (
+          console.log(err)
+        );
+        callback(err, result)
+      });
+      conn.release();
+    })
+
+  } catch (error) {
+    console.log(`An error orcur findSetting: ${error}`);
+  }
+}
+
+
+
+
+async function updateSetting(settingData, callback) {
+  let query = 'UPDATE setting SET ';
+  let fields = [];
+  
+  // Dynamically build the query based on the fields in settingData
+  for (const [key, value] of Object.entries(settingData)) {
+    // Skip 'gametext' since it will be used in the WHERE condition
+    if (key === 'gametext') continue;
+    // Convert datetime fields to MySQL format
+    if (key === 'lastupdate' && typeof value === 'string') {
+      const mysqlDateTime = new Date(value).toISOString().slice(0, 19).replace('T', ' ');
+      fields.push(`${key} = '${mysqlDateTime}'`);
+    } else {
+      fields.push(`${key} = ${typeof value === 'string' ? `'${value}'` : value}`);
+    }
+  }
+  // Join the fields to form the SET part of the query
+  query += fields.join(', ');
+  // Add a condition to update only where 'gametext' matches
+  if (settingData.gametext) {
+    query += ` WHERE gametext = '${settingData.gametext}';`;
+  } else {
+    return callback(new Error('Missing gametext for update condition'), null);
+  }
+
+  try {
+    await connection.getConnection(function (err, conn) {
+      if (err) {
+        console.log(`getConnection error : ${err}`);
+        callback(err, null);
+        return;
+      }
+      connection.query(query, function (err, result) {
+        if (err) {
+          console.log(`Update error: ${err}`);
+          callback(err, null);
+        } else {
+          callback(null, result);
+        }
+      });
+      conn.release();
+    });
+  } catch (error) {
+    console.log(`An error occurred in updateSetting: ${error}`);
+    callback(error, null);
+  }
+}
+
+
 
 
 module.exports = {
@@ -486,9 +559,11 @@ module.exports = {
   addStationData: addStationData,
   deleteStationData: deleteStationData,
   findData: findData,
-
+  //setting config
+  findSetting:findSetting,
+  updateSetting:updateSetting,
+  //setting config 
   allStationData: allStationData,
-
   findDataNumber: findDataNumber,
   deleteStationDataAll: deleteStationDataAll,
   updateStationData: updateStationData,

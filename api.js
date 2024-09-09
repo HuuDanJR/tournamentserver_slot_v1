@@ -14,47 +14,20 @@ const randomstring =require('randomstring');
 
 
 router.use((request, response, next) => {
-    console.log('middleware!');
+    console.log('*middleware*');
     next();
 });
 
-
+//home
 router.route('/home').get((req, res) => {
-    return res.status(200).json('home tournament');
+    return res.status(200).json('slot tournament vegas');
 })
-
-router.route('/triggerSocketEvent').get(async (req, res) => {
-    const data = await rankingModel.find().sort({ point: -1 }).limit(10).exec();
-    if (data == null || data.length === 0) {
-      console.log('findListRankingSocket: No Data')
-    } else {
-      const formattedData = data.map(item => ({
-        data: item.point,
-        name: item.customer_name,
-        number: item.customer_number,
-        time: item.createdAt
-      }));
-      const defaultPoint = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-      const dataFind = formattedData.map(item => item.data);
-      let dataResult = [defaultPoint, dataFind.map(item => item / 2), dataFind];
-      let myData = {
-        data: dataResult,
-        name: formattedData.map(item => item.name),
-        number: formattedData.map(item => item.number),
-        time: formattedData.map(item => item.time),
-      }
-    io.emit('eventFromClient2', { myData });
-    res.status(200).json({ message: 'Socket event triggered' });
-}})
-
-
+//init
 router.route('/init').get((req, res) => {
-    // const url = 'http://localhost:8090'; // Your desired URL
     const url = `${req.protocol}://${req.get('host')}`
     res.json({ "url": url });
 })
-
-
+//find betnumber
 router.route('/findbetnumber').get((req, res) => {
     try {
         dboperation.findBetNumber((err, result) => {
@@ -66,9 +39,41 @@ router.route('/findbetnumber').get((req, res) => {
     } catch (error) {
         return res.status(500).json({ error: 'An unexpected error occurred.' });
     }
+});
+
+
+//find setting
+router.route('/findsetting').get((req, res) => {
+    try {
+        dboperation.findSetting((err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error fetching setting.' });
+            }
+            return res.status(200).json(result);
+        });
+    } catch (error) {
+        return res.status(500).json({ error: 'An unexpected error occurred.' });
+    }
+});
+
+//update setting
+router.route('/update_setting').put((req,res)=>{
+    const settingData = req.body; // Get data from the request body
+    try {
+        dboperation.updateSetting(settingData,(err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error fetching setting.' });
+            }
+            return res.status(200).json(result);
+        });
+    } catch (error) {
+        return res.status(500).json({ error: 'An unexpected error occurred.' });
+    }
 })
 
-//ALL DATA 
+
+
+//list station
 router.route('/list_station').get((req, res) => {
     try {
         dboperation.allStationData((err, result) => {
@@ -81,84 +86,19 @@ router.route('/list_station').get((req, res) => {
         return res.status(500).json({ error: 'An unexpected error occurred.' });
     }
 })
-// //SAVE ALL DATA FROM MYSQL TO MONGODB
-router.route('/save_list_station').get((req, res) => {
-    try {
-        dboperation.allStationData((err, result) => {
-            if (err) {
-                return res.status(500).json({ error: 'Error fetching all station data.' });
-            }
-            // Extract relevant fields from each station object
-            const extractedData = result.map(station => {
-                const { machine, member, credit, lastupdate } = station;
-                return { machine, member, credit, lastupdate };
-            });
-            mongodbFunction.saveListStationToMongo(extractedData,randomstring.generate(10));
-
-            return res.status(200).json({ message: 'Data saved to MongoDB successfully.' });
-        });
-    } catch (error) {
-        return res.status(500).json({ error: 'An unexpected error occurred.' });
-    }
-})
-//List Item have in RoundName
-router.route('/list_ranking_realtime/:roundName').get(async (req, res) => {
-    try {
-        const roundName = req.params.roundName;
-        // Find all records with the specified roundName
-        const records = await rankingRealtimeModel.find({ roundName: roundName });
-
-        // Return the records as JSON
-        return res.status(200).json(records);
-    } catch (error) {
-        return res.status(500).json({ error: 'An unexpected error occurred.' });
-    }
-})
-
-//LIST GROUP
-// Define a route to get the list of records grouped by roundName
-router.route('/list_ranking_realtime_group').get(async (req, res) => {
-    try {
-        // Aggregate records by roundName
-        const records = await rankingRealtimeModel.aggregate([
-            {
-                $group: {
-                    _id: {
-                        $concat: ["Round_Realtime_", "$roundName"]
-                    },
-                    createdAt: { $first: '$createdAt' }, 
-                    items: { $push: '$$ROOT' }
-                }
-            }
-        ]);
-        // Return the aggregated records as JSON
-        return res.status(200).json(records);
-    } catch (error) {
-        // If an error occurs, return a 500 status code with an error message
-        return res.status(500).json({ error: 'An unexpected error occurred.' });
-    }
-});
-
-
-
-
-
 
 //UPDATE MEMBER
 router.post('/update_member', async (req, res) => {
     try {
         const { ip, member } = req.body; // Get IP address and new member number from request body
-
         // Update member number in the database
         await dboperation.updateMemberNumber(ip, member);
-
         res.status(200).json({ message: 'Member number updated successfully' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while updating member number' });
     }
 });
-
 
 //CREATE STATION 
 router.route('/create_station').post((req, res) => {
@@ -174,6 +114,14 @@ router.route('/create_station').post((req, res) => {
         return res.status(500).json({ error: 'An unexpected error occurred when create new station' });
     }
 })
+
+
+
+
+
+
+
+
 
 // ADD REALTIME TO TOP RANKING
 router.route('/add_ranking_realtime').post(async(req, res) => {
@@ -417,7 +365,95 @@ router.route('/register').post(async (req, res) => {
         console.error(error);
         res.status(500).json({ message: 'Registration failed' });
       }
+});
+
+
+//socket event
+router.route('/triggerSocketEvent').get(async (req, res) => {
+    const data = await rankingModel.find().sort({ point: -1 }).limit(10).exec();
+    if (data == null || data.length === 0) {
+      console.log('findListRankingSocket: No Data')
+    } else {
+      const formattedData = data.map(item => ({
+        data: item.point,
+        name: item.customer_name,
+        number: item.customer_number,
+        time: item.createdAt
+      }));
+      const defaultPoint = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      const dataFind = formattedData.map(item => item.data);
+      let dataResult = [defaultPoint, dataFind.map(item => item / 2), dataFind];
+      let myData = {
+        data: dataResult,
+        name: formattedData.map(item => item.name),
+        number: formattedData.map(item => item.number),
+        time: formattedData.map(item => item.time),
+      }
+    io.emit('eventFromClient2', { myData });
+    res.status(200).json({ message: 'Socket event triggered' });
+}})
+
+
+
+// //SAVE ALL DATA FROM MYSQL TO MONGODB
+router.route('/save_list_station').get((req, res) => {
+    try {
+        dboperation.allStationData((err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error fetching all station data.' });
+            }
+            // Extract relevant fields from each station object
+            const extractedData = result.map(station => {
+                const { machine, member, credit, lastupdate } = station;
+                return { machine, member, credit, lastupdate };
+            });
+            mongodbFunction.saveListStationToMongo(extractedData,randomstring.generate(10));
+
+            return res.status(200).json({ message: 'Data saved to MongoDB successfully.' });
+        });
+    } catch (error) {
+        return res.status(500).json({ error: 'An unexpected error occurred.' });
+    }
 })
+
+
+
+//List Item have in RoundName
+router.route('/list_ranking_realtime/:roundName').get(async (req, res) => {
+    try {
+        const roundName = req.params.roundName;
+        // Find all records with the specified roundName
+        const records = await rankingRealtimeModel.find({ roundName: roundName });
+
+        // Return the records as JSON
+        return res.status(200).json(records);
+    } catch (error) {
+        return res.status(500).json({ error: 'An unexpected error occurred.' });
+    }
+});
+
+// Define a route to get the list of records grouped by roundName
+router.route('/list_ranking_realtime_group').get(async (req, res) => {
+    try {
+        // Aggregate records by roundName
+        const records = await rankingRealtimeModel.aggregate([
+            {
+                $group: {
+                    _id: {
+                        $concat: ["Round_Realtime_", "$roundName"]
+                    },
+                    createdAt: { $first: '$createdAt' }, 
+                    items: { $push: '$$ROOT' }
+                }
+            }
+        ]);
+        // Return the aggregated records as JSON
+        return res.status(200).json(records);
+    } catch (error) {
+        // If an error occurs, return a 500 status code with an error message
+        return res.status(500).json({ error: 'An unexpected error occurred.' });
+    }
+});
 
 
 module.exports = router;
