@@ -31,7 +31,7 @@ function findDataSocketFull(name, io, isInit,customLimit) {
         io.emit(name, member, [ips, oldCredits, newCredits]);
       }
       if (!areArraysEqual(oldCredits, newCredits)) {
-        console.log(`-findDataSocketFull: data changed`);
+        console.log(`findDataSocketFull: data changed`);
         io.emit(name, member, [ips, oldCredits, newCredits]);
         oldCredits = newCredits;
       }

@@ -500,6 +500,31 @@ async function findSetting(callback) {
 }
 
 
+// Function to find settings and emit them to the client
+async function findSettingSocket(name, io) {
+  let query = `SELECT * FROM setting`;
+  try {
+      await connection.getConnection(function (err, conn) {
+          if (err) {
+              console.log(`getConnection error : ${err}`);
+              return;
+          }
+          connection.query(query, function (err, result, fields) {
+              if (err) {
+                  console.log(err);
+                  return;
+              }
+              // Emit the result to the client
+              io.emit(name, result);
+          });
+          conn.release();
+      });
+  } catch (error) {
+      console.log(`An error occurred in findSetting: ${error}`);
+  }
+}
+
+
 
 
 async function updateSetting(settingData, callback) {
@@ -561,6 +586,7 @@ module.exports = {
   findData: findData,
   //setting config
   findSetting:findSetting,
+  findSettingSocket:findSettingSocket,
   updateSetting:updateSetting,
   //setting config 
   allStationData: allStationData,

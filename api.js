@@ -14,7 +14,7 @@ const randomstring =require('randomstring');
 
 
 router.use((request, response, next) => {
-    console.log('*middleware*');
+    console.log('middleware');
     next();
 });
 
@@ -64,7 +64,19 @@ router.route('/update_setting').put((req,res)=>{
             if (err) {
                 return res.status(500).json({ error: 'Error fetching setting.' });
             }
-            return res.status(200).json(result);
+            // return res.status(200).json(result);
+            // Check if rows were affected
+            if (result.affectedRows > 0) {
+                return res.status(200).json({
+                    message: 'Update successful',
+                    status: 1
+                });
+            } else {
+                return res.status(200).json({
+                    message: 'No changes were made to the setting.',
+                    status: 1
+                });
+            }
         });
     } catch (error) {
         return res.status(500).json({ error: 'An unexpected error occurred.' });

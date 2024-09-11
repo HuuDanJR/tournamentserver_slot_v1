@@ -1,13 +1,27 @@
+var http = require('http');
 const cron = require('node-cron');
 const dboperation_socketio = require('./socket_operation');
-//setting using mysqloperation
-const dboperation_mysql = require('../mysql/mysql_operation');
+const { truncate } = require('fs');
 const apiSettings = {
     topRakingLimit: 10,
     realtimeLimit: 9,
     init:false
 };
 
+
+
+
+// function initializeOperations(io) {
+//     if (!isOperationsExecuted) {
+//         dboperation_socketio.findDataSocketFullRedis('eventFromServer', io, true);
+//         dboperation_socketio.findListRankingSocketRedis('eventFromServerMongo', io, true);
+//         cronJob = cron.schedule('*/7 * * * * *', () => {
+//             dboperation_socketio.findDataSocketFullRedis('eventFromServer', io, false);
+//             dboperation_socketio.findListRankingSocketRedis('eventFromServerMongo', io, false);
+//         });
+//         isOperationsExecuted = true;
+//     }
+// }
 function handleSocketIO(io) {
     apiSettings.init=false;
     io.off('connection',(socket)=>{
@@ -16,6 +30,7 @@ function handleSocketIO(io) {
     io.on('connection', (socket) => {
             console.log('A user connected', socket.id);
             dboperation_socketio.findDataSocketFull('eventFromServer', io, true, apiSettings.realtimeLimit);
+            // dboperation_socketio.findListRankingSocket('eventFromServerMongo', io, false, apiSettings.topRakingLimit);
             dboperation_socketio.findListDisplaySocket('eventFromServerToggle', io);
     
     
@@ -63,14 +78,6 @@ function handleSocketIO(io) {
             socket.on('emitToggleDisplayRealTop', (data) => {
                 dboperation_socketio.findListDisplayRealTopSocket('eventFromServerToggle', io);
             });
-
-
-
-            // Handle getting settings from the database
-            socket.on('emitSetting', async () => {
-                console.log('getSetting acess');
-                dboperation_mysql.findSettingSocket('eventSetting',io);
-            });
             
     
             socket.on('disconnect', () => {
@@ -80,13 +87,27 @@ function handleSocketIO(io) {
             });
         });
 }
-function handleSocketSetting(io) {
-        //socket setting get and post here ... 
+function handleSocketIOTopRanking(io) {
+        // io.on('connection', (socket) => {
+        //     console.log('A user top rank connected', socket.id);
+        //     socket.on('eventFromClient2_force', (data) => {
+        //         apiSettings.init=true;
+        //         dboperation_socketio.findListRankingSocket('eventFromServerMongo', io, true, apiSettings.topRakingLimit);
+        //     });
+           
+    
+        //     socket.on('disconnect', () => {
+        //         console.log('A user disconnected');
+        //         cronJob.stop();
+        //         io.emit('eventFromServerMongo', {});
+        //     });
+        // });
 }
 
 
 module.exports = { 
+        // initializeOperations,
         handleSocketIO ,
-        handleSocketSetting
+        handleSocketIOTopRanking
 };
 
