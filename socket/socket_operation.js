@@ -1,7 +1,7 @@
 const { join } = require('path');
 const connection = require('../mysql/mysql_dbconfig');
 const rankingModel = require('../mongodb/model/ranking');
-const mongofunctions = require('../mongodb/mongo_operation2');
+const mongofunctions = require('../mongodb/mongo_operation_v2');
 const client = require('../redis/redis_config');
 const displayModel  =require('../mongodb/model/display');
 const displayModelRealTop  =require('../mongodb/model/display_realtop');
@@ -201,7 +201,7 @@ function arraysHaveDifferences(arr1, arr2) {
 
 function findDataSocketFullRedis(name, io, isInit, customLimit) {
   let limitClause = customLimit ? `LIMIT ${parseInt(customLimit, 10)}` : 'LIMIT 10';
-  const { updateRankings } = require('../mongodb/mongo_operation_test');
+  const { updateRankings } = require('../mongodb/mongo_operation_v2.1');
   let query = `SELECT credit, ip, member FROM stationdata WHERE display = 1 ORDER BY credit DESC ${limitClause}`;
   // Check Redis cache first
   client.get('station_data', async function (err, cachedData) {

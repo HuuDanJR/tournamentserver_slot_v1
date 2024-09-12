@@ -23,6 +23,9 @@ require('./mongodb/mongo_config').connectDB();
 //RANKING ROUTE
 const rankingRoutes = require('./mongodb/mongo_operation');
 app.use('/api', rankingRoutes);
+//RANKING ROUTE
+const timeRoutes = require('./mongodb/mongo_operation.time');
+app.use('/api/time', timeRoutes);
 
 const port = process.env.PORT || 8096;
 http.listen(port, () => { 

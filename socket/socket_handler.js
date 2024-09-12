@@ -2,6 +2,9 @@ const cron = require('node-cron');
 const dboperation_socketio = require('./socket_operation');
 //setting using mysqloperation
 const dboperation_mysql = require('../mysql/mysql_operation');
+//time api using mongodb operation
+const dboperation_time = require('../mongodb/mongo_operation.time');
+const dboperation_time_function = require('../mongodb/mongo_function.time')
 const apiSettings = {
     topRakingLimit: 10,
     realtimeLimit: 9,
@@ -72,6 +75,11 @@ function handleSocketIO(io) {
                 dboperation_mysql.findSettingSocket('eventSetting',io);
             });
             
+
+            socket.on('emitTime', async () => {
+                console.log('getTime acess');
+                dboperation_time_function.findTimeFirstSocket('eventTime',io);
+            });
     
             socket.on('disconnect', () => {
                 console.log('A user disconnected');
