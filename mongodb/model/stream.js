@@ -1,23 +1,17 @@
 const mongoose = require('mongoose');
 const moment = require('moment-timezone');
 
-const TimeSchema = new mongoose.Schema({
+const StreamSchema = new mongoose.Schema({
     id: {
         type: String, unique: true
     },
-    minutes: {
-        type: Number,
-        required: true,
+    name:{
+        type:String, default: "PLAYER",
+        required:true
     },
-    seconds: {
-        type: Number,
+    url: {
+        type: String,
         required: true,
-    },
-    status: {
-        type: Number,
-        default:0,
-        required: true,
-        // 0 : init | 1 : ticking | 2 : pause | 3 : stop  | 4 restart 
     },
     active: { 
         type:Boolean,
@@ -36,10 +30,10 @@ const TimeSchema = new mongoose.Schema({
     },
 });
 
-TimeSchema.pre('save', function(next) {
+StreamSchema.pre('save', function(next) {
     this.updateAt = moment().tz("Asia/Bangkok").toDate();
     next();
 });
 
-const Time = mongoose.model('Time', TimeSchema);
-module.exports = Time;
+const Stream = mongoose.model('streams', StreamSchema);
+module.exports = Stream;

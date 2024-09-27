@@ -5,6 +5,8 @@ const { v4: uuidv4 } = require('uuid');
 
 
 
+
+
 router.route('/create_time').post(async (req, res) => {
   const {  minutes, seconds,status, active } = req.body;
   try {
@@ -35,7 +37,7 @@ router.route('/find_time_first').get(async (req, res) => {
       time = await Time.findOne({ active: false }).sort({ createdAt: -1 }).exec();
     }
     if (time) {
-      res.status(200).json(time);
+      res.status(200).json([time]);
     } else {
       res.status(404).json({ message: 'No time records found' });
     }
@@ -70,6 +72,38 @@ router.route('/update_time').put(async (req, res) => {
       return res.status(404).json({ message: `Time with id "${id}" not found.` });
     }
     res.json(updatedTime);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error updating time', error });
+  }
+});
+
+
+//update time latest
+router.route('/update_time_latest').put(async (req, res) => {
+  const { ...updateData } = req.body; // remove `id` from destructuring since we're getting it from the database
+  try {
+    // Fetch the active or inactive time record
+    let time = await Time.findOne({ active: true }).sort({ createdAt: -1 }).exec();
+    if (!time) {
+      time = await Time.findOne({ active: false }).sort({ createdAt: -1 }).exec();
+    }
+
+    // If no time is found, respond with a 404
+    if (!time) {
+      return res.status(404).json({ message: 'No time records found to update.' ,status :0});
+    }
+
+    // Update the time record using the fetched id
+    const updatedTime = await Time.findOneAndUpdate({ id: time.id }, updateData, { new: true });
+
+    if (!updatedTime) {
+      return res.status(404).json({ message: `Time with id "${time.id}" not found.` });
+    }
+
+    res.status(200).json({
+      message: 'Update Successful.' ,status :1,data:updateData
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error updating time', error });

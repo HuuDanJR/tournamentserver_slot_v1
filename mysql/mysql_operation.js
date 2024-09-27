@@ -200,14 +200,12 @@ async function updateConnectStatus(ip, newConnectValue, callback) {
         callback(err);
         return;
       }
-
       connection.query(updateQuery, [newConnectValue, ip], function (err, result) {
         if (err) {
           console.log(err);
           callback(err);
           return;
         }
-
         console.log(`Update successful for IP ${ip}. New connect value: ${newConnectValue}`);
         callback(null, result);
       });
@@ -216,6 +214,73 @@ async function updateConnectStatus(ip, newConnectValue, callback) {
     });
   } catch (error) {
     console.log(`An error occurred in updateConnectStatus: ${error}`);
+    callback(error);
+  }
+}
+
+
+
+
+// UPDATE ENABLE BY IP
+async function updateEnableStatus(ip, newEnableValue, callback) {
+  let updateQuery = `UPDATE stationdata SET status = ? WHERE ip = ?`;
+  try {
+    await connection.getConnection(function (err, conn) {
+      if (err) {
+        console.log(`getConnection error : ${err}`);
+        callback(err);
+        return;
+      }
+
+      connection.query(updateQuery, [newEnableValue, ip], function (err, result) {
+        if (err) {
+          console.log(err);
+          callback(err);
+          return;
+        }
+
+        console.log(`Update successful for IP ${ip}. New enable value: ${newEnableValue}`);
+        callback(null, result);
+      });
+
+      conn.release();
+    });
+  } catch (error) {
+    console.log(`An error occurred in updateEnableStatus: ${error}`);
+    callback(error);
+  }
+}
+
+
+
+
+//UPDATe ENABLE FOR ALL
+// UPDATE ENABLE FIELD FOR ALL ROWS
+async function updateEnableAll(newEnableValue, callback) {
+  let updateQuery = `UPDATE stationdata SET status = ?`;
+  try {
+    await connection.getConnection(function (err, conn) {
+      if (err) {
+        console.log(`getConnection error : ${err}`);
+        callback(err);
+        return;
+      }
+
+      connection.query(updateQuery, [newEnableValue], function (err, result) {
+        if (err) {
+          console.log(err);
+          callback(err);
+          return;
+        }
+
+        console.log(`Update successful for all rows. New enable value: ${newEnableValue}`);
+        callback(null, result);
+      });
+
+      conn.release();
+    });
+  } catch (error) {
+    console.log(`An error occurred in updateEnableAll: ${error}`);
     callback(error);
   }
 }
@@ -597,6 +662,8 @@ module.exports = {
   addStationDataWithIP: addStationDataWithIP,
 
   updateConnectStatus: updateConnectStatus,
+  updateEnableStatus:updateEnableStatus,
+  updateEnableAll:updateEnableAll,
   updateStatusByIP: updateStatusByIP,
   addDisplayColumn: addDisplayColumn,
   createStation: createStation,

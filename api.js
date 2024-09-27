@@ -42,6 +42,43 @@ router.route('/findbetnumber').get((req, res) => {
 });
 
 
+//enable by ip
+router.route('/update_status').post((req, res) => {
+    const { ip, status } = req.body;
+
+    if (!ip || status === undefined) {
+        return res.status(400).json({ error: 'IP and enable value are required.'});
+    }
+
+    try {
+        dboperation.updateEnableStatus(ip, status, (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error updating enable status.'});
+            }
+            return res.status(200).json({ message: 'Update successful', result });
+        });
+    } catch (error) {
+        return res.status(500).json({ error: 'An unexpected error occurred during update.' });
+    }
+});
+//enable all 
+router.route('/update_status_all').post((req, res) => {
+    const { status } = req.body;
+    if (status === undefined) {
+        return res.status(400).json({ error: 'Enable value is required.' });
+    }
+    try {
+        dboperation.updateEnableAll(status, (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error updating enable field for all rows.' });
+            }
+            return res.status(200).json({ message: 'Update successful for all rows', result });
+        });
+    } catch (error) {
+        return res.status(500).json({ error: 'An unexpected error occurred during update.' });
+    }
+});
+
 //find setting
 router.route('/findsetting').get((req, res) => {
     try {

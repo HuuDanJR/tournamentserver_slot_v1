@@ -20,17 +20,30 @@ app.use('/api', routerAPI)
 //USE MONGODB DATABASE
 require('./mongodb/mongo_config').connectDB();
 
+
+
+
+
+
 //RANKING ROUTE
 const rankingRoutes = require('./mongodb/mongo_operation');
 app.use('/api', rankingRoutes);
-//RANKING ROUTE
+//TIME ROUTE
 const timeRoutes = require('./mongodb/mongo_operation.time');
 app.use('/api/time', timeRoutes);
+//STREAM ROUTE 
+const streamRoutes = require('./mongodb/mongo_operation.stream');
+app.use('/api/stream', streamRoutes);
+
+
+
+
 
 const port = process.env.PORT || 8096;
 http.listen(port, () => { 
     console.log('app running at port: ' + port);
 });
+
 
 //USE SOCKET IO
 const socketHandler = require('./socket/socket_handler');

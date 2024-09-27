@@ -75,10 +75,16 @@ function handleSocketIO(io) {
                 dboperation_mysql.findSettingSocket('eventSetting',io);
             });
             
-
+            //emitTime Socket
             socket.on('emitTime', async () => {
                 console.log('getTime acess');
                 dboperation_time_function.findTimeFirstSocket('eventTime',io);
+            });
+
+            //updateTime Socket
+            socket.on('updateTime', async (updateData) => {
+                console.log('Update Time access without ID');
+                dboperation_time_function.updateTimeByIdSocket('eventTime', io, updateData);
             });
     
             socket.on('disconnect', () => {
