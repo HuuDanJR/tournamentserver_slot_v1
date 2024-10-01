@@ -15,15 +15,12 @@ app.use(function (req, res, next) {
 app.use(body_parser.urlencoded({ extended: false }))
 app.use(body_parser.json())
 app.use(cors())
+
+
 const routerAPI = require('./api')
 app.use('/api', routerAPI)
 //USE MONGODB DATABASE
 require('./mongodb/mongo_config').connectDB();
-
-
-
-
-
 
 //RANKING ROUTE
 const rankingRoutes = require('./mongodb/mongo_operation');
@@ -36,14 +33,17 @@ const streamRoutes = require('./mongodb/mongo_operation.stream');
 app.use('/api/stream', streamRoutes);
 
 
-
-
-
-const port = process.env.PORT || 8096;
+const port = process.env.PORT || 8086;
 http.listen(port, () => { 
     console.log('app running at port: ' + port);
 });
 
+//DEFAULT WEB
+app.use(express.static('public-flutter'));
+app.use(express.static('public-flutter/assets'));
+router.get('/', (request, response) => {
+    response.sendFile(path.resolve('./public-flutter/index.html'));
+});
 
 //USE SOCKET IO
 const socketHandler = require('./socket/socket_handler');

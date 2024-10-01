@@ -11,6 +11,7 @@ const displayModelRealTop  =require('../mongodb/model/display_realtop');
 let oldCredits = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 let lastExecutionTime = 0;
 const throttleInterval = 2000;
+// const throttleInterval = 2000; //change throttleInterval from 2s - 1.5s
 function findDataSocketFull(name, io, isInit,customLimit) {
   const currentTime = Date.now();
   if (currentTime - lastExecutionTime < throttleInterval) {
