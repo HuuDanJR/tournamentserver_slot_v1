@@ -31,6 +31,9 @@ app.use('/api/time', timeRoutes);
 //STREAM ROUTE 
 const streamRoutes = require('./mongodb/mongo_operation.stream');
 app.use('/api/stream', streamRoutes);
+//JACKPOT ROUTE 
+const jackpotRoutes = require('./mongodb/mongo_operation.jackpot');
+app.use('/api/jackpot',jackpotRoutes)
 
 
 const port = process.env.PORT || 8086;

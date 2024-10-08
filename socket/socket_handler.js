@@ -4,7 +4,10 @@ const dboperation_socketio = require('./socket_operation');
 const dboperation_mysql = require('../mysql/mysql_operation');
 //time api using mongodb operation
 const dboperation_time = require('../mongodb/mongo_operation.time');
-const dboperation_time_function = require('../mongodb/mongo_function.time')
+//time function
+const dboperation_time_function = require('../mongodb/mongo_function.time');
+//jackpot function
+const dboperation_jackpot_function = require('../mongodb/mongo_function.jackpot');
 const apiSettings = {
     topRakingLimit: 10,
     realtimeLimit: 9,
@@ -77,7 +80,7 @@ function handleSocketIO(io) {
             
             //emitTime Socket
             socket.on('emitTime', async () => {
-                console.log('getTime acess');
+                console.log('emitTime acess');
                 dboperation_time_function.findTimeFirstSocket('eventTime',io);
             });
 
@@ -85,6 +88,13 @@ function handleSocketIO(io) {
             socket.on('updateTime', async (updateData) => {
                 console.log('Update Time access without ID');
                 dboperation_time_function.updateTimeByIdSocket('eventTime', io, updateData);
+            });
+
+
+            //jackpot socket
+            socket.on('emitJackpot', async () => {
+                console.log('jackpot acess');
+                dboperation_jackpot_function.findJackpotPriceSocket('eventJackpot',io);
             });
     
             socket.on('disconnect', () => {
