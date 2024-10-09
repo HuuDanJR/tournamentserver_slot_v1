@@ -36,15 +36,15 @@ async function findJackpotPriceSocket(name, io) {
 
 const connection = require("../mysql/mysql_dbconfig");
 let lastExecutionTime = 0;
-const throttleInterval = 10000; // 10 seconds interval
+const throttleInterval = 10000; // 5 seconds interval
 let previousAverageCredit = null; // Track the previous averageCredit
 let timeCount = 0; // Time count variable to increment for each run
 let initialAverageCredit = null; // Track the initial averageCredit for diff calculation
 let returnValue = 100; // Initialize return value with default 100
 let oldValue = 100; // Initialize oldValue with 100 as well
-const defaultThreshold = 130; // Set the default threshold
-const limit = 150; // Set the limit
-let hasDropped = false; // Track whether the drop has occurred
+const limit = 150; // Set the limit value
+const defaultThreshold = 135; // Set default threshold variable
+
 
 async function findJackpotNumberSocket(name, io) {
   try {
@@ -65,20 +65,24 @@ async function findJackpotNumberSocket(name, io) {
       } else {
         // Map credit values and divide by 100
         let newCredits = result.map((item) => parseFloat(item.credit) / 100);
-
         // Sum the credits and calculate the average
         let totalCredit = newCredits.reduce((sum, credit) => sum + credit, 0);
-        let averageCredit = (totalCredit / newCredits.length) * 0.025;
-
+        let averageCredit = (totalCredit / newCredits.length) * 0.1;
+        // console.log(`Average credit (sum/total * 0.01): ${averageCredit}`);
         let diff = null; // Initialize the diff value as null
-        let drop = false; // Initialize drop variable
+        let drop = false; // Initialize the drop variable
 
         // Emit the initial averageCredit if it's the first run
         if (previousAverageCredit === null) {
           initialAverageCredit = averageCredit; // Store the initial averageCredit
           returnValue += averageCredit;
-          io.emit(name, { averageCredit, status: "init", timeCount, diff, oldValue, returnValue, drop });
-          console.log(`${timeCount}| init : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop}`);
+          // Ensure returnValue is within the limit
+          returnValue = Math.min(Math.max(returnValue, 100), limit);
+          // Set drop based on the returnValue range
+          drop = returnValue >= defaultThreshold && returnValue <= limit;
+
+          io.emit(name, { averageCredit, status: "init", timeCount, diff,oldValue,returnValue ,drop});
+          console.log( `${timeCount}| init : ${averageCredit} , diff: ${diff},oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop} `);
         } else {
           let status; // Compare current averageCredit with the previous one
           if (averageCredit > previousAverageCredit) {
@@ -90,29 +94,25 @@ async function findJackpotNumberSocket(name, io) {
           } else {
             status = "same";
           }
-          diff = averageCredit - initialAverageCredit;
+          
+           // Ensure returnValue is within the limit
+           returnValue = Math.min(Math.max(returnValue, 100), limit);
+           diff = averageCredit - initialAverageCredit;
+ 
+           // Set drop based on the returnValue range
+           drop = returnValue >= defaultThreshold && returnValue <= limit;
+ 
+           // If drop is true, keep returnValue as oldValue
+           if (drop) {
+             returnValue = oldValue; // Keep returnValue as oldValue
+           }
 
-          // Set drop based on the returnValue range
-          drop = returnValue >= defaultThreshold && returnValue <= limit;
-
-          // Emit the averageCredit along with the status only if not dropped
-          if (!hasDropped) {
-            io.emit(name, { averageCredit, status, timeCount, diff, oldValue, returnValue, drop });
-            console.log(`${timeCount}| ${status} : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop}`);
-          } else {
-            console.log('dropped');
-          }
+          // Emit the averageCredit along with the status
+          io.emit(name, { averageCredit, status, timeCount, diff,oldValue,returnValue,drop });
+          console.log(`${timeCount}| ${status} : ${averageCredit} , diff: ${diff},oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop}`);
         }
-        // If drop condition is met, keep the returnValue as oldValue
-        if (drop) {
-          // Emit one last time before stopping further emissions
-          if (!hasDropped) {
-            hasDropped = true; // Set dropped state
-            io.emit(name, { averageCredit, status: "drop", timeCount, diff, oldValue, returnValue, drop });
-            console.log(`${timeCount}| dropped : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop}`);
-          }
-        } else {
-          // Update oldValue to be the current returnValue before the next run
+        // Update oldValue to be the current returnValue before the next run
+        if(!drop){
           oldValue = returnValue;
           // Update the previousAverageCredit for the next run
           previousAverageCredit = averageCredit;
@@ -123,6 +123,7 @@ async function findJackpotNumberSocket(name, io) {
     throw new Error("Error fetching jackpot number records: " + error.message);
   }
 }
+
 // async function findJackpotNumberSocket(name,io){
 //   try {
 //     const currentTime = Date.now();
