@@ -27,6 +27,12 @@ function handleSocketIO(io) {
     
             const cronJob = cron.schedule('*/5 * * * * *', () => {
                 dboperation_socketio.findDataSocketFull('eventFromServer', io, true, apiSettings.realtimeLimit);
+
+            });
+
+
+            const cronJob2 = cron.schedule('*/10 * * * * *', () => {
+                dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,);
             });
     
             socket.on('eventFromClient2_force', (data) => {
@@ -91,15 +97,23 @@ function handleSocketIO(io) {
             });
 
 
-            //jackpot socket
+            //jackpot socket from mongodb
             socket.on('emitJackpot', async () => {
-                console.log('jackpot acess');
+                // console.log('jackpot acess');
                 dboperation_jackpot_function.findJackpotPriceSocket('eventJackpot',io);
+            });
+            
+
+            //jackot socket from mysql 
+            socket.on('emitJackpotNumber', async () => {
+                console.log('jackpot acess number');
+                dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,);
             });
     
             socket.on('disconnect', () => {
                 console.log('A user disconnected');
                 cronJob.stop();
+                cronJob2.stop();
                 apiSettings.init=false;
             });
         });
