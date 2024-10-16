@@ -14,6 +14,18 @@ const apiSettings = {
     init:false
 };
 
+
+
+let jackpotSettings = {
+    returnValue: 100,  // Default value
+    oldValue: 100,     // Default value
+    defaultThreshold: 130,
+    limit: 150,
+    percent: 0.05,
+    throttleInterval: 10000 // 10 seconds interval between each run
+}
+
+
 function handleSocketIO(io) {
     apiSettings.init=false;
     io.off('connection',(socket)=>{
@@ -23,18 +35,15 @@ function handleSocketIO(io) {
             console.log('A user connected', socket.id);
             dboperation_socketio.findDataSocketFull('eventFromServer', io, true, apiSettings.realtimeLimit);
             dboperation_socketio.findListDisplaySocket('eventFromServerToggle', io);
-    
-    
+
             const cronJob = cron.schedule('*/5 * * * * *', () => {
                 dboperation_socketio.findDataSocketFull('eventFromServer', io, true, apiSettings.realtimeLimit);
-
             });
 
-
-            const cronJob2 = cron.schedule('*/10 * * * * *', () => {
-                dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,);
+            const cronJob2 = cron.schedule('*/7 * * * * *', () => {
+                dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,false,jackpotSettings);
             });
-    
+
             socket.on('eventFromClient2_force', (data) => {
                 dboperation_socketio.findListRankingSocket('eventFromServerMongo', io, true, apiSettings.topRakingLimit);
             });
@@ -42,7 +51,6 @@ function handleSocketIO(io) {
             socket.on('eventFromClient_force', (data) => {
                 dboperation_socketio.findDataSocketFull('eventFromServer', io, true, apiSettings.realtimeLimit);
             });
-    
     
             socket.on('changeLimitTopRanking', (newLimit) => {
                 console.log(`Received new limit TOPRANKING from UI: ${newLimit}`);
@@ -99,7 +107,7 @@ function handleSocketIO(io) {
 
             //jackpot socket from mongodb
             socket.on('emitJackpot', async () => {
-                // console.log('jackpot acess');
+                console.log('jackpot acess');
                 dboperation_jackpot_function.findJackpotPriceSocket('eventJackpot',io);
             });
             
@@ -107,7 +115,25 @@ function handleSocketIO(io) {
             //jackot socket from mysql 
             socket.on('emitJackpotNumber', async () => {
                 console.log('jackpot acess number');
-                dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,);
+                dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,false,jackpotSettings);
+            });
+
+            //jackot socket from mysql 
+            socket.on('emitJackpotNumberInitial', async () => {
+                console.log('jackpot acess number initial');
+                dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,true,jackpotSettings);
+            });
+            // Listen for 'updateJackpotSettings' from Flutter
+            socket.on('updateJackpotSetting', (newSettings) => {
+                console.log('Received new jackpot settings from Flutter:', newSettings);
+                // Update the current jackpot settings with the new ones received from Flutter
+                jackpotSettings = {
+                    ...jackpotSettings,  // Spread operator to maintain the structure and overwrite specific fields
+                    ...newSettings       // Overwriting only the provided new settings
+                };
+                console.log('Updated jackpot settings:', jackpotSettings);
+                // Optionally, emit an event back to Flutter or other clients to confirm the update
+                io.emit('jackpotSettingsUpdated', jackpotSettings);
             });
     
             socket.on('disconnect', () => {
@@ -118,13 +144,9 @@ function handleSocketIO(io) {
             });
         });
 }
-function handleSocketSetting(io) {
-        //socket setting get and post here ... 
-}
 
-
-module.exports = { 
-        handleSocketIO ,
-        handleSocketSetting
+module.exports = {
+    handleSocketIO,
+    jackpotSettings,
 };
 
