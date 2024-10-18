@@ -4,9 +4,9 @@ const config_mysql = {
     user: 'root',
     password: '',
     database:'roulettetournament',
-    host: '30.0.0.78',
+    // host: '30.0.0.78',
     // host: '30.0.0.82',
-    // host: '192.168.100.101',
+    host: '192.168.100.101',
     port: 3306,
     connectTimeout: 20000,
 }

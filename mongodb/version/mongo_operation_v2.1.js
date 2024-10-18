@@ -1,6 +1,6 @@
 // rankingUtils.js
 
-const rankingModel = require('./model/ranking')
+const rankingModel = require('../model/ranking')
 const addNewRankings = async (newCredits, members, ips) => {
 //REMOVE DUPLICATE 
 const pipeline = [

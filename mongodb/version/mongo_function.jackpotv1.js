@@ -1,4 +1,4 @@
-const Jackpot = require("./model/jackpot.js");
+const Jackpot = require("../model/jackpot.js");
 
 // Function to find settings and emit them to the client
 async function findJackpotAllSocket(name, io) {
@@ -34,7 +34,7 @@ async function findJackpotPriceSocket(name, io) {
   }
 }
 
-const connection = require("../mysql/mysql_dbconfig.js");
+const connection = require("../../mysql/mysql_dbconfig.js");
 let lastExecutionTime = 0;
 const throttleInterval = 10000; // 5 seconds interval
 let previousAverageCredit = null; // Track the previous averageCredit

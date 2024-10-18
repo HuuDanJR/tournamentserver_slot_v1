@@ -8,9 +8,10 @@ const dboperation_time = require('../mongodb/mongo_operation.time');
 const dboperation_time_function = require('../mongodb/mongo_function.time');
 //jackpot function
 const dboperation_jackpot_function = require('../mongodb/mongo_function.jackpot');
+const dboperation_jackpot_function2 = require('../mongodb/mongo_function.jackpot2');
 const apiSettings = {
     topRakingLimit: 10,
-    realtimeLimit: 9,
+    realtimeLimit: 8,
     init:false
 };
 
@@ -19,11 +20,26 @@ const apiSettings = {
 let jackpotSettings = {
     returnValue: 100,  // Default value
     oldValue: 100,     // Default value
-    defaultThreshold: 130,
+    defaultThreshold: 135,
     limit: 150,
-    percent: 0.05,
+    percent: 0.01,
     throttleInterval: 10000 // 10 seconds interval between each run
 }
+let jackpot2Settings = {
+    returnValue: 50,  // Default value
+    oldValue: 50,     // Default value
+    defaultThreshold: 60,
+    limit: 70,
+    percent: 0.01,
+    throttleInterval: 10000 // 10 seconds interval between each run
+}
+
+let cronJobRunning = false; // Flag to check if cronJob2 is running
+let cronJob2; 
+
+// Define cronJob2 globally
+let cronJobRunningsub = false; // Flag to check if cronJob2 is running
+let cronJob3; // Define cronJob2 globally
 
 
 function handleSocketIO(io) {
@@ -40,9 +56,22 @@ function handleSocketIO(io) {
                 dboperation_socketio.findDataSocketFull('eventFromServer', io, true, apiSettings.realtimeLimit);
             });
 
-            const cronJob2 = cron.schedule('*/7 * * * * *', () => {
-                dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,false,jackpotSettings);
-            });
+            // Start cronJob2 if it's not running
+            if (!cronJobRunning) {
+                console.log('Starting cronJob2...');
+                cronJob2 = cron.schedule('*/10 * * * * *', () => {
+                    dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber', io, false, jackpotSettings);
+                });
+                cronJobRunning = true; // Set the flag to true once cronJob2 starts
+            }
+            // Start cronJob2 if it's not running
+            if (!cronJobRunningsub) {
+                console.log('Starting cronJob3...');
+                cronJob3 = cron.schedule('*/7 * * * * *', () => {
+                    dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number', io, false, jackpot2Settings);
+                });
+                cronJobRunningsub = true; // Set the flag to true once cronJob2 starts
+            }
 
             socket.on('eventFromClient2_force', (data) => {
                 dboperation_socketio.findListRankingSocket('eventFromServerMongo', io, true, apiSettings.topRakingLimit);
@@ -114,18 +143,29 @@ function handleSocketIO(io) {
 
             //jackot socket from mysql 
             socket.on('emitJackpotNumber', async () => {
-                console.log('jackpot acess number');
+                console.log('vegas prize. jackpot acess number');
                 dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,false,jackpotSettings);
             });
+            //jackot socket from mysql 
+            socket.on('emitJackpot2Number', async () => {
+                console.log('lucky prize. jackpot acess number');
+                dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number',io,false,jackpot2Settings);
+            });
+
 
             //jackot socket from mysql 
             socket.on('emitJackpotNumberInitial', async () => {
                 console.log('jackpot acess number initial');
                 dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,true,jackpotSettings);
             });
-            // Listen for 'updateJackpotSettings' from Flutter
+            //jackot 2  socket from mysql 
+            socket.on('emitJackpot2NumberInitial', async () => {
+                console.log('jackpot 2 acess number initial');
+                dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number',io,true,jackpot2Settings);
+            });
+            // Listen for 'updateJackpotSettings' 
             socket.on('updateJackpotSetting', (newSettings) => {
-                console.log('Received new jackpot settings from Flutter:', newSettings);
+                console.log('Received jackpot settings from Flutter:', newSettings);
                 // Update the current jackpot settings with the new ones received from Flutter
                 jackpotSettings = {
                     ...jackpotSettings,  // Spread operator to maintain the structure and overwrite specific fields
@@ -133,13 +173,32 @@ function handleSocketIO(io) {
                 };
                 console.log('Updated jackpot settings:', jackpotSettings);
                 // Optionally, emit an event back to Flutter or other clients to confirm the update
-                io.emit('jackpotSettingsUpdated', jackpotSettings);
+            });
+
+            // Listen for 'updateJackpot2Settings'
+            socket.on('updateJackpot2Setting', (newSettings) => {
+                console.log('Received jackpot2 settings from Flutter:', newSettings);
+                jackpot2Settings = {
+                    ...jackpot2Settings,  // Spread operator to maintain the structure and overwrite specific fields
+                    ...newSettings       // Overwriting only the provided new settings
+                };
+                console.log('Updated jackpot2 settings:', jackpot2Settings);
+                io.emit('jackpot2SettingsUpdated', jackpot2Settings);
             });
     
             socket.on('disconnect', () => {
                 console.log('A user disconnected');
                 cronJob.stop();
-                cronJob2.stop();
+                if (io.engine.clientsCount === 0 && cronJobRunning) {
+                    console.log('Stopping cronJob2...');
+                    cronJob2.stop();
+                    cronJobRunning = false; // Reset the flag when stopping cronJob2
+                }
+                if (io.engine.clientsCount === 0 && cronJobRunningsub) {
+                    console.log('Stopping cronJob3...');
+                    cronJob3.stop();
+                    cronJobRunningsub = false; // Reset the flag when stopping cronJob3
+                }
                 apiSettings.init=false;
             });
         });
@@ -148,5 +207,6 @@ function handleSocketIO(io) {
 module.exports = {
     handleSocketIO,
     jackpotSettings,
+    jackpot2Settings,
 };
 
