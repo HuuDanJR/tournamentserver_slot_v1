@@ -1,19 +1,23 @@
 const Jackpot = require("./model/jackpot.js");
 const connection = require("../mysql/mysql_dbconfig");
 const settings = require("../socket/socket_handler.js");
+const settings2 = require("../socket/socket_handler.js");
+
+
+
+
+
+
+
 let lastExecutionTime = 0;
 let previousAverageCredit = null; // Track the previous averageCredit
 let timeCount = 0; // Time count variable to increment for each run
 let hasDropped = false; // Track whether the drop has occurred
 let returnValue = settings.returnValue || 100; // Initialize return value
 let oldValue = settings.oldValue || 100; // Initialize old value
-// Set global returnValue and oldValue to settings values before calling your function
-
-
 
 //VEGAS PRICE
-async function findJackpotNumberSocket(name, io, init = false, settings) {
-  // console.log(`Global settings & returnValue: ${oldValue} ${returnValue}`, );
+async function findJackpotNumberSocket(name, io, init = false, settings, exceptNum = null) {
   try {
     if (init) {
       // Reset flags and values when init is true
@@ -23,7 +27,8 @@ async function findJackpotNumberSocket(name, io, init = false, settings) {
       previousAverageCredit = null; // Reset previousAverageCredit
       timeCount = 0; // Reset timeCount
       lastExecutionTime = 0;
-
+      // Reset selectedIp in settings to default (null or 0) when initialized
+      settings.selectedIp = null;
       // Emit default data when init is true
       const defaultData = {
         averageCredit: 0,
@@ -34,15 +39,11 @@ async function findJackpotNumberSocket(name, io, init = false, settings) {
         returnValue: settings.oldValue,
         limit: settings.limit,
         drop: false,
-        selectedIp: 0, // Set ip to default value 0
+        selectedIp: settings.selectedIp, // Set ip to default value 0
       };
 
       io.emit(name, defaultData);
-      console.log(
-        `Init condition met, emitting default data: ${JSON.stringify(
-          defaultData
-        )}`
-      );
+      console.log( `Init condition met, emitting default data: ${JSON.stringify(defaultData )}`);
       // return; // Exit the function after emitting default data
     }
 
@@ -62,24 +63,36 @@ async function findJackpotNumberSocket(name, io, init = false, settings) {
       } else {
         // Map credit values and divide by 100
         let newCredits = result.map((item) => parseFloat(item.credit) / 100);
-
         // Sum the credits and calculate the average
         let totalCredit = newCredits.reduce((sum, credit) => sum + credit, 0);
-        let averageCredit =
-          (totalCredit / newCredits.length) * settings.percent;
-
+        let averageCredit = (totalCredit / newCredits.length) * settings.percent;
         let diff = null; // Initialize the diff value as null
         let drop = false; // Initialize drop variable
+     // SELECTE IP LOCGIC  Filter IP addresses where status = 0 and credit > 0
+     let availableIps = result.filter((item) => item.status === 0 && parseFloat(item.credit) > 0).map((item) => item.ip);
 
-        // Filter IP addresses where status = 0 and credit > 0
-        let availableIps = result .filter((item) => item.status === 1 && parseFloat(item.credit) > 0).map((item) => item.ip); // Randomly select an IP if any are available
-        let selectedIp = null;
-        if (availableIps.length > 0) {
-          selectedIp =  availableIps[Math.floor(Math.random() * availableIps.length)];
-          // console.log(`Selected IP: ${selectedIp}`);
-        } else {
-          console.log("No IP with status = 0 available, skipping IP emit");
-        }
+     let selectedIp = settings.selectedIp;  // Start with the current selected IP
+
+     if (availableIps.length > 1) {
+     // More than one IP available, exclude exceptNum and select a random one
+     availableIps = availableIps.filter(ip => ip !== exceptNum);
+
+     // Only proceed if there are still IPs left after filtering
+     if (availableIps.length > 0) {
+     selectedIp = availableIps[Math.floor(Math.random() * availableIps.length)];
+     console.log(`Selected IP1: ${selectedIp}`);
+     settings.selectedIp = selectedIp;
+     } else {
+     console.log(`No available IP 1  after excluding ${exceptNum}`);
+     }
+     } else if (availableIps.length === 1) {
+     // Exactly one IP available, assign the exceptNum as the selected IP
+     settings.selectedIp = availableIps[0];
+     console.log(`Only one IP available, selected: ${settings.selectedIp}`);
+     } else {
+     // No IPs available
+     console.log("Lucky prize. No IP with status = 0 available, skipping IP emit");
+     }
         // Emit the initial averageCredit if it's the first run
         if (previousAverageCredit === null) {
           initialAverageCredit = averageCredit; // Store the initial averageCredit
@@ -93,9 +106,7 @@ async function findJackpotNumberSocket(name, io, init = false, settings) {
             drop,
             selectedIp,
           });
-          console.log(
-            `${timeCount}. init : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${oldValue}, drop: ${drop},selectIp: ${selectedIp}, percent: ${settings.percent}`
-          );
+          console.log(`${timeCount}. init : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${oldValue}, drop: ${drop},selectIp: ${selectedIp}, percent: ${settings.percent}`);
         } else {
           let status; // Compare current averageCredit with the previous one
           if (averageCredit > previousAverageCredit) {
@@ -114,7 +125,6 @@ async function findJackpotNumberSocket(name, io, init = false, settings) {
           }
           // Set drop based on the returnValue range
           drop = returnValue >= settings.defaultThreshold && returnValue <= settings.limit;
-
           // Emit the averageCredit along with the status only if not dropped
           if (!hasDropped) {
             if (returnValue > settings.limit) {
@@ -142,7 +152,8 @@ async function findJackpotNumberSocket(name, io, init = false, settings) {
         // If drop condition is met, keep the returnValue as oldValue
         if (drop) {
           // Emit one last time before stopping further emissions
-          if (!hasDropped) {
+          console.log('Emit one last time before stopping further emissions');
+          if (!hasDropped && selectedIp != exceptNum) {
             hasDropped = true; // Set dropped state
             const emitData = {
               averageCredit,
@@ -160,6 +171,24 @@ async function findJackpotNumberSocket(name, io, init = false, settings) {
             console.log(`${timeCount}| dropped : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp: ${selectedIp},percent: ${settings.percent}`
             );
           }
+          else if (!hasDropped && selectedIp === exceptNum) {
+            hasDropped = true; // Set dropped state
+            const emitData = {
+              averageCredit,
+              status: "dropped with exceptNum",
+              timeCount,
+              diff,
+              oldValue,
+              returnValue,
+              drop,
+            };
+            if (selectedIp) {
+              emitData.ip = exceptNum;
+            }
+            io.emit(name, emitData);
+            console.log(`${timeCount}| dropped dropped with exceptNum : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp: ${exceptNum},percent: ${settings.percent}`
+            );
+          }
         } else {
           // Update oldValue to be the current returnValue before the next run
           oldValue = returnValue;
@@ -172,6 +201,36 @@ async function findJackpotNumberSocket(name, io, init = false, settings) {
     throw new Error("Error fetching jackpot number records: " + error.message);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -208,37 +267,10 @@ async function findJackpotPriceSocket(name, io) {
   }
 }
 
-// async function findJackpotNumberSocket(name,io){
-//   try {
-//     const currentTime = Date.now();
-//     if (currentTime - lastExecutionTime < throttleInterval) {
-//       return;
-//     }
-//     lastExecutionTime = currentTime;
-//     let query = `SELECT credit, ip,member FROM stationdata WHERE display = 1 ORDER BY credit DESC LIMIT 10 `;
-//     connection.query(query, async function (err, result, fields) {
-//       if (err) {
-//         console.log(err);
-//       } else {
-//         let newCredits = result.map(item => parseFloat(item.credit) / 100);
-//         // Sum newCredits and divide by the number of records, then multiply by 0.01
-//         let totalCredit = newCredits.reduce((sum, credit) => sum + credit, 0);
-//         let averageCredit = (totalCredit / newCredits.length) * 0.01;
-//         console.log(`Average credit (sum/total * 0.01): ${averageCredit}`);
-//         // console.log('findJackpotNumberSocket initial: receive data each 5s')
-//         io.emit(name, [averageCredit]);
-
-//       }
-//   });
-//   } catch (error) {
-//     throw new Error('Error fetching jackpot number records: ' + error.message);
-//   }
-// }
 
 //export router for use
 module.exports = {
   findJackpotAllSocket: findJackpotAllSocket,
   findJackpotPriceSocket: findJackpotPriceSocket,
   findJackpotNumberSocket: findJackpotNumberSocket,
-  
 };

@@ -22,16 +22,19 @@ let jackpotSettings = {
     oldValue: 100,     // Default value
     defaultThreshold: 135,
     limit: 150,
-    percent: 0.01,
-    throttleInterval: 10000 // 10 seconds interval between each run
+    percent: 0.1,
+    throttleInterval: 10000, // 10 seconds interval between each run
+    selectedIp : null,
 }
+
 let jackpot2Settings = {
     returnValue: 50,  // Default value
     oldValue: 50,     // Default value
     defaultThreshold: 60,
     limit: 70,
-    percent: 0.01,
-    throttleInterval: 10000 // 10 seconds interval between each run
+    percent: 0.25,
+    throttleInterval: 10000, // 10 seconds interval between each run
+    selectedIp: null,
 }
 
 let cronJobRunning = false; // Flag to check if cronJob2 is running
@@ -56,11 +59,14 @@ function handleSocketIO(io) {
                 dboperation_socketio.findDataSocketFull('eventFromServer', io, true, apiSettings.realtimeLimit);
             });
 
+            
+
             // Start cronJob2 if it's not running
             if (!cronJobRunning) {
                 console.log('Starting cronJob2...');
                 cronJob2 = cron.schedule('*/10 * * * * *', () => {
-                    dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber', io, false, jackpotSettings);
+                    console.log("selectedIP 1:",jackpotSettings.selectedIp);
+                    dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber', io, false, jackpotSettings,jackpot2Settings.selectedIp);
                 });
                 cronJobRunning = true; // Set the flag to true once cronJob2 starts
             }
@@ -68,7 +74,8 @@ function handleSocketIO(io) {
             if (!cronJobRunningsub) {
                 console.log('Starting cronJob3...');
                 cronJob3 = cron.schedule('*/7 * * * * *', () => {
-                    dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number', io, false, jackpot2Settings);
+                    console.log("selectedIP 2:",jackpot2Settings.selectedIp);
+                    dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number', io, false, jackpot2Settings,jackpotSettings.selectedIp);
                 });
                 cronJobRunningsub = true; // Set the flag to true once cronJob2 starts
             }

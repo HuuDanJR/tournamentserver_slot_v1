@@ -9,7 +9,7 @@ let oldValue = settings.oldValue || 50; // Initialize old value
 
 
 //JACKPOT PRICE
-async function findJackpot2NumberSocket(name, io, init = false, settings) {
+async function findJackpot2NumberSocket(name, io, init = false, settings,exceptNum = null) {
   try {
     if (init) {
       hasDropped = false;
@@ -18,24 +18,25 @@ async function findJackpot2NumberSocket(name, io, init = false, settings) {
       previousAverageCredit = null; // Reset previousAverageCredit
       timeCount = 0; // Reset timeCount
       lastExecutionTime = 0;
+      settings.selectedIp = null;
+
 
       const defaultData = {
         averageCredit: 0,
-        status: "lucky price. init ",
+        status: "init2 ",
         timeCount: 0,
         diff: 0,
         oldValue: settings.oldValue,
         returnValue: settings.oldValue,
         limit: settings.limit,
         drop: false,
-        selectedIp: 0, // Set ip to default value 0
+        selectedIp: settings.selectedIp, // Set ip to default value 0
       };
 
       io.emit(name, defaultData);
-      console.log(
-        `lucky price. Init condition met, emitting default data: ${JSON.stringify(
+      console.log(`Init2  condition met, emitting default data: ${JSON.stringify(
           defaultData
-        )}`
+      )}`
       );
     }
 
@@ -56,18 +57,41 @@ async function findJackpot2NumberSocket(name, io, init = false, settings) {
         let averageCredit = (totalCredit / newCredits.length) * settings.percent;
         let diff = null; // Initialize the diff value as null
         let drop = false; // Initialize drop variable
-        let availableIps = result .filter((item) => item.status === 1 && parseFloat(item.credit) > 0).map((item) => item.ip); // Randomly select an IP if any are available
-        let selectedIp = null;
-        if (availableIps.length > 0) {
-          selectedIp =  availableIps[Math.floor(Math.random() * availableIps.length)];
-        } else {
-          console.log("lucky prize. No IP with status = 0 available, skipping IP emit");
-        }
-        if (previousAverageCredit === null) {
+
+
+      // SELECTE IP LOCGIC  Filter IP addresses where status = 0 and credit > 0
+      let availableIps = result.filter((item) => item.status === 0 && parseFloat(item.credit) > 0).map((item) => item.ip);
+
+      let selectedIp = settings.selectedIp;  // Start with the current selected IP
+
+      if (availableIps.length > 1) {
+      // More than one IP available, exclude exceptNum and select a random one
+      availableIps = availableIps.filter(ip => ip !== exceptNum);
+
+      // Only proceed if there are still IPs left after filtering
+      if (availableIps.length > 0) {
+      selectedIp = availableIps[Math.floor(Math.random() * availableIps.length)];
+      console.log(`Selected IP2: ${selectedIp}`);
+      settings.selectedIp = selectedIp;
+      } else {
+      console.log(`No available IP 2  after excluding ${exceptNum}`);
+      }
+      } else if (availableIps.length === 1) {
+      // Exactly one IP available, assign the exceptNum as the selected IP
+      settings.selectedIp = availableIps[0];
+      console.log(`Only one IP available, selected: ${settings.selectedIp}`);
+      } else {
+      // No IPs available
+      console.log("Lucky prize. No IP with status = 0 available, skipping IP emit");
+      }
+
+
+
+     if (previousAverageCredit === null) {
           initialAverageCredit = averageCredit; // Store the initial averageCredit
           io.emit(name, {
             averageCredit,
-            status: "init",
+            status: "init2",
             timeCount,
             diff,
             oldValue,
@@ -75,17 +99,17 @@ async function findJackpot2NumberSocket(name, io, init = false, settings) {
             drop,
             selectedIp,
           });
-          console.log(`lucky prize. ${timeCount}. init : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${oldValue}, drop: ${drop},selectIp: ${selectedIp}, percent: ${settings.percent}`);
+          console.log(` ${timeCount}. init 2: ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${oldValue}, drop: ${drop},selectIp: ${selectedIp}, percent: ${settings.percent}`);
         } else {
           let status; // Compare current averageCredit with the previous one
           if (averageCredit > previousAverageCredit) {
-            status = "lucky prize. increase";
+            status = "increase2";
             returnValue += averageCredit; // Update returnValue on increase
           } else if (averageCredit < previousAverageCredit) {
-            status = "lucky prize. decrease";
+            status = "decrease2";
             returnValue += averageCredit; // Update returnValue on decrease
           } else {
-            status = "lucky prize. same";
+            status = "same2";
           }
           diff = averageCredit - initialAverageCredit;
           if (returnValue > settings.limit) {
@@ -109,7 +133,7 @@ async function findJackpot2NumberSocket(name, io, init = false, settings) {
               emitData.ip = selectedIp;
             }
             io.emit(name, emitData);
-            console.log(`lucky prize. ${timeCount}. ${status} : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp:${selectedIp},percent: ${settings.percent}`);
+            console.log(`${timeCount}. ${status} 2: ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp:${selectedIp},percent: ${settings.percent}`);
           } else {
             console.log("lucky prize. dropped jp");
             // console.log(`lucky prize. *${timeCount}. ${status} : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp:${selectedIp},percent: ${settings.percent}`);
@@ -118,7 +142,7 @@ async function findJackpot2NumberSocket(name, io, init = false, settings) {
         // If drop condition is met, keep the returnValue as oldValue
         if (drop) {
           // Emit one last time before stopping further emissions
-          if (!hasDropped) {
+          if (!hasDropped && selectedIp != exceptNum) {
             hasDropped = true; // Set dropped state
             const emitData = {
               averageCredit,
@@ -133,9 +157,29 @@ async function findJackpot2NumberSocket(name, io, init = false, settings) {
               emitData.ip = selectedIp;
             }
             io.emit(name, emitData);
-            console.log(`lucky prize. ${timeCount}.dropped : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp: ${selectedIp},percent: ${settings.percent}`
+            console.log(`${timeCount}.dropped2: ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp: ${selectedIp},percent: ${settings.percent}`
             );
           }
+
+        //   else if (!hasDropped && selectedIp === exceptNum) {
+        //     hasDropped = true; // Set dropped state
+        //     const emitData = {
+        //       averageCredit,
+        //       status: "dropped with exceptNum",
+        //       timeCount,
+        //       diff,
+        //       oldValue,
+        //       returnValue,
+        //       drop,
+        //     };
+        //     if (selectedIp) {
+        //       emitData.ip = exceptNum;
+        //     }
+        //     io.emit(name, emitData);
+        //     console.log(`${timeCount}. dropped dropped with exceptNum : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp: ${exceptNum},percent: ${settings.percent}`
+        //     );
+        //   }
+          
         } else {
           oldValue = returnValue;
           previousAverageCredit = averageCredit;
