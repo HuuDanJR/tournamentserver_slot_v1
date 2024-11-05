@@ -71,7 +71,7 @@ async function findJackpot2NumberSocket(name, io, init = false, settings,exceptN
       // Only proceed if there are still IPs left after filtering
       if (availableIps.length > 0) {
       selectedIp = availableIps[Math.floor(Math.random() * availableIps.length)];
-      console.log(`Selected IP2: ${selectedIp}`);
+      // console.log(`Selected IP2: ${selectedIp}`);
       settings.selectedIp = selectedIp;
       } else {
       console.log(`No available IP 2  after excluding ${exceptNum}`);
@@ -99,7 +99,7 @@ async function findJackpot2NumberSocket(name, io, init = false, settings,exceptN
             drop,
             selectedIp,
           });
-          console.log(` ${timeCount}. init 2: ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${oldValue}, drop: ${drop},selectIp: ${selectedIp}, percent: ${settings.percent}`);
+          console.log(`${timeCount}. init2: ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${oldValue}, drop: ${drop},selectIp: ${selectedIp}, percent: ${settings.percent}`);
         } else {
           let status; // Compare current averageCredit with the previous one
           if (averageCredit > previousAverageCredit) {
@@ -122,7 +122,7 @@ async function findJackpot2NumberSocket(name, io, init = false, settings,exceptN
             }            
             const emitData = {
               averageCredit,
-              status: "lucky prize. dropped",
+              status: "LUCKY PRIZE. DROPPED!!",
               timeCount,
               diff,
               oldValue,
@@ -133,7 +133,7 @@ async function findJackpot2NumberSocket(name, io, init = false, settings,exceptN
               emitData.ip = selectedIp;
             }
             io.emit(name, emitData);
-            console.log(`${timeCount}. ${status} 2: ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp:${selectedIp},percent: ${settings.percent}`);
+            console.log(`#LUCKY.${timeCount}.${status}:${averageCredit},${diff},${oldValue},${returnValue},${drop},${selectedIp},${settings.percent}`);
           } else {
             console.log("lucky prize. dropped jp");
             // console.log(`lucky prize. *${timeCount}. ${status} : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp:${selectedIp},percent: ${settings.percent}`);

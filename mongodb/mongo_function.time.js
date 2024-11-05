@@ -5,7 +5,6 @@ const Time  =  require('./model/time.js')
 async function findTimeFirstSocket(name, io) {
   try {
     let time = await Time.findOne({ active: true }).sort({ createdAt: -1 }).exec();
-    
     if (!time) {
       time = await Time.findOne({ active: false }).sort({ createdAt: -1 }).exec();
     }

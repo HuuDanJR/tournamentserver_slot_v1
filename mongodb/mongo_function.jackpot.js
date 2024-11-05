@@ -1,9 +1,6 @@
-const Jackpot = require("./model/jackpot.js");
 const connection = require("../mysql/mysql_dbconfig");
 const settings = require("../socket/socket_handler.js");
 const settings2 = require("../socket/socket_handler.js");
-
-
 
 
 
@@ -80,7 +77,7 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
      // Only proceed if there are still IPs left after filtering
      if (availableIps.length > 0) {
      selectedIp = availableIps[Math.floor(Math.random() * availableIps.length)];
-     console.log(`Selected IP1: ${selectedIp}`);
+    //  console.log(`Selected IP1: ${selectedIp}`);
      settings.selectedIp = selectedIp;
      } else {
      console.log(`No available IP 1  after excluding ${exceptNum}`);
@@ -143,16 +140,15 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
               emitData.ip = selectedIp;
             }
             io.emit(name, emitData);
-            console.log(`${timeCount}. ${status} : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp:${selectedIp},percent: ${settings.percent}`);
+            console.log(`#VEGAS.${timeCount}.${status}:${averageCredit},${diff},${oldValue},${returnValue},${drop},${selectedIp},${settings.percent}`);
           } else {
-            console.log("vegas prize. dropped jp");
-            // console.log(`*${timeCount}. ${status} : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp:${selectedIp},percent: ${settings.percent}`);
+            console.log("VEGAS PRIZE. DROPPED!!");
           }
         }
         // If drop condition is met, keep the returnValue as oldValue
         if (drop) {
           // Emit one last time before stopping further emissions
-          console.log('Emit one last time before stopping further emissions');
+          // console.log('Emit one last time before stopping further emissions');
           if (!hasDropped && selectedIp != exceptNum) {
             hasDropped = true; // Set dropped state
             const emitData = {

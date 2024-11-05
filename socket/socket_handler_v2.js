@@ -22,7 +22,7 @@ let jackpotSettings = {
     oldValue: 100,     // Default value
     defaultThreshold: 135,
     limit: 150,
-    percent: 0.0001,
+    percent: 0.005,
     throttleInterval: 6000, // 6 seconds interval between each run
     selectedIp : null,
 }
@@ -32,17 +32,52 @@ let jackpot2Settings = {
     oldValue: 50,     // Default value
     defaultThreshold: 60,
     limit: 70,
-    percent: 0.0001,
+    percent: 0.005,
     throttleInterval: 5000, // 5 seconds interval between each run
     selectedIp: null,
 }
 
 let cronJobRunning = false; // Flag to check if cronJob2 is running
-let cronJob2; // Define cronJob2 (vegas prize) globally
+let cronJob2; 
+
+// Define cronJob2 globally
+let cronJobRunningsub = false; // Flag to check if cronJob2 is running
+let cronJob3; // Define cronJob2 globally
+
+function startCronJob2(io) {
+    if (!cronJobRunning) {
+        console.log('Starting cronJob2...');
+        cronJob2 = cron.schedule('*/6 * * * * *', () => {
+            dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber', io, false, jackpotSettings, jackpot2Settings.selectedIp);
+        });
+        cronJobRunning = true;
+    }
+}
+
+function startCronJob3(io) {
+    if (!cronJobRunningsub) {
+        console.log('Starting cronJob3...');
+        cronJob3 = cron.schedule('*/5 * * * * *', () => {
+            dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number', io, false, jackpot2Settings, jackpotSettings.selectedIp);
+        });
+        cronJobRunningsub = true;
+    }
+}
+
+function stopCronJobs() {
+    if (cronJobRunning) {
+        cronJob2.stop();
+        cronJobRunning = false;
+        console.log('Stopped cronJob2');
+    }
+    if (cronJobRunningsub) {
+        cronJob3.stop();
+        cronJobRunningsub = false;
+        console.log('Stopped cronJob3');
+    }
+}
 
 
-let cronJobRunningsub = false; // Flag to check if cronJob3 is running
-let cronJob3; // Define cronJob3 (lucky prize) globally
 
 
 function handleSocketIO(io) {
@@ -58,25 +93,7 @@ function handleSocketIO(io) {
             const cronJob = cron.schedule('*/5 * * * * *', () => {
                 dboperation_socketio.findDataSocketFull('eventFromServer', io, true, apiSettings.realtimeLimit);
             });
-
-            // Start cronJob2 (vegas lucky) if it's not running
-            if (!cronJobRunning) {
-                console.log('Starting cronJob2...');
-                cronJob2 = cron.schedule('*/7 * * * * *', () => {
-                    console.log("selectedIP 1:",jackpotSettings.selectedIp);
-                    dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber', io, false, jackpotSettings,jackpot2Settings.selectedIp);
-                });
-                cronJobRunning = true;
-            }
-            // Start cronJob3 (lucky prize) if it's not running
-            if (!cronJobRunningsub) {
-                console.log('Starting cronJob3...');
-                cronJob3 = cron.schedule('*/7 * * * * *', () => {
-                    console.log("selectedIP 2:",jackpot2Settings.selectedIp);
-                    dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number', io, false, jackpot2Settings,jackpotSettings.selectedIp);
-                });
-                cronJobRunningsub = true; 
-            }
+            
 
             socket.on('eventFromClient2_force', (data) => {
                 dboperation_socketio.findListRankingSocket('eventFromServerMongo', io, true, apiSettings.topRakingLimit);
@@ -119,7 +136,6 @@ function handleSocketIO(io) {
             });
 
 
-
             // Handle getting settings from the database
             socket.on('emitSetting', async () => {
                 console.log('getSetting acess');
@@ -149,12 +165,12 @@ function handleSocketIO(io) {
             //jackot socket from mysql 
             socket.on('emitJackpotNumber', async () => {
                 console.log('vegas prize. jackpot acess number');
-                dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,false,jackpotSettings);
+                startCronJob2(io);
             });
             //jackot socket from mysql 
             socket.on('emitJackpot2Number', async () => {
                 console.log('lucky prize. jackpot acess number');
-                dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number',io,false,jackpot2Settings);
+                startCronJob3(io);
             });
 
 
