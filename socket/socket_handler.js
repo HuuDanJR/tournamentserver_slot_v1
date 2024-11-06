@@ -18,22 +18,22 @@ const apiSettings = {
 
 
 let jackpotSettings = {
-    returnValue: 100,  // Default value
-    oldValue: 100,     // Default value
-    defaultThreshold: 135,
-    limit: 150,
-    percent: 0.0001,
-    throttleInterval: 6000, // 6 seconds interval between each run
+    returnValue: 200,  // Default value
+    oldValue: 200,     // Default value
+    defaultThreshold: 265,
+    limit: 300,
+    percent: 0.002,
+    throttleInterval: 7, // 7 seconds interval between each run
     selectedIp : null,
 }
 
 let jackpot2Settings = {
-    returnValue: 50,  // Default value
-    oldValue: 50,     // Default value
-    defaultThreshold: 60,
+    returnValue: 20,  // Default value
+    oldValue: 20,     // Default value
+    defaultThreshold: 55,
     limit: 70,
-    percent: 0.0001,
-    throttleInterval: 5000, // 5 seconds interval between each run
+    percent: 0.001,
+    throttleInterval: 6, // 6 seconds interval between each run
     selectedIp: null,
 }
 
@@ -71,7 +71,7 @@ function handleSocketIO(io) {
             // Start cronJob3 (lucky prize) if it's not running
             if (!cronJobRunningsub) {
                 console.log('Starting cronJob3...');
-                cronJob3 = cron.schedule('*/7 * * * * *', () => {
+                cronJob3 = cron.schedule('*/6 * * * * *', () => {
                     console.log("selectedIP 2:",jackpot2Settings.selectedIp);
                     dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number', io, false, jackpot2Settings,jackpotSettings.selectedIp);
                 });

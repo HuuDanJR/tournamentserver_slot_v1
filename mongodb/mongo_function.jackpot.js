@@ -52,21 +52,22 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
     lastExecutionTime = currentTime;
     timeCount++; // Increment the time count on each run
 
-    let query = `SELECT credit, ip,status, member FROM stationdata WHERE display = 1 ORDER BY credit DESC LIMIT 10`;
+    let query = `SELECT credit,bet, ip,status, member FROM stationdata WHERE display = 1 ORDER BY credit DESC LIMIT 10`;
     // Query the database for the top 10 records
     connection.query(query, async function (err, result, fields) {
+      // console.log('VEGAS JP DATA',result)
       if (err) {
         console.log(err);
       } else {
         // Map credit values and divide by 100
-        let newCredits = result.map((item) => parseFloat(item.credit) / 100);
+        let newCredits = result.map((item) => parseFloat(item.bet) / 100);
         // Sum the credits and calculate the average
-        let totalCredit = newCredits.reduce((sum, credit) => sum + credit, 0);
+        let totalCredit = newCredits.reduce((sum, bet) => sum + bet, 0);
         let averageCredit = (totalCredit / newCredits.length) * settings.percent;
         let diff = null; // Initialize the diff value as null
         let drop = false; // Initialize drop variable
      // SELECTE IP LOCGIC  Filter IP addresses where status = 0 and credit > 0
-     let availableIps = result.filter((item) => item.status === 0 && parseFloat(item.credit) > 0).map((item) => item.ip);
+     let availableIps = result.filter((item) => item.status === 0 && parseFloat(item.bet) > 0).map((item) => item.ip);
 
      let selectedIp = settings.selectedIp;  // Start with the current selected IP
 
@@ -77,7 +78,7 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
      // Only proceed if there are still IPs left after filtering
      if (availableIps.length > 0) {
      selectedIp = availableIps[Math.floor(Math.random() * availableIps.length)];
-    //  console.log(`Selected IP1: ${selectedIp}`);
+     console.log(`Selected IP VEGAS FUNCTION: ${selectedIp}`);
      settings.selectedIp = selectedIp;
      } else {
      console.log(`No available IP 1  after excluding ${exceptNum}`);
