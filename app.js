@@ -33,7 +33,12 @@ const streamRoutes = require('./mongodb/mongo_operation.stream');
 app.use('/api/stream', streamRoutes);
 //JACKPOT ROUTE 
 const jackpotRoutes = require('./mongodb/mongo_operation.jackpot');
-app.use('/api/jackpot',jackpotRoutes)
+app.use('/api/jackpot',jackpotRoutes);
+
+//JACKPOT DROP  ROUTE 
+const jackpotDropRoutes = require('./mongodb/mongo_operation.jackpot_drop');
+app.use('/api/jackpot_drop',jackpotDropRoutes);
+
 
 
 const port = process.env.PORT || 8086;

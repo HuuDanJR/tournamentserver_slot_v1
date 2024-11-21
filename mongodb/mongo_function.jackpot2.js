@@ -60,7 +60,7 @@ async function findJackpot2NumberSocket(name, io, init = false, settings,exceptN
 
 
       // SELECTE IP LOCGIC  Filter IP addresses where status = 0 and credit > 0
-      let availableIps = result.filter((item) => item.status === 0 && parseFloat(item.bet) > 0).map((item) => item.ip);
+      let availableIps = result.filter((item) => item.status === 1 && parseFloat(item.bet) > 0).map((item) => item.ip);
 
       let selectedIp = settings.selectedIp;  // Start with the current selected IP
 
@@ -122,7 +122,7 @@ async function findJackpot2NumberSocket(name, io, init = false, settings,exceptN
             }            
             const emitData = {
               averageCredit,
-              status: "LUCKY PRIZE. DROPPED!!",
+              status: `LUCKY PRIZE. DROPPED!!! ${selectedIp}`,
               timeCount,
               diff,
               oldValue,

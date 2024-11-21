@@ -1,7 +1,7 @@
 const connection = require("../mysql/mysql_dbconfig");
 const settings = require("../socket/socket_handler.js");
 const settings2 = require("../socket/socket_handler.js");
-
+const jackpotDropFunction = require('./mongo_function.jackpot_drop.js')
 
 
 
@@ -10,8 +10,8 @@ let lastExecutionTime = 0;
 let previousAverageCredit = null; // Track the previous averageCredit
 let timeCount = 0; // Time count variable to increment for each run
 let hasDropped = false; // Track whether the drop has occurred
-let returnValue = settings.returnValue || 100; // Initialize return value
-let oldValue = settings.oldValue || 100; // Initialize old value
+let returnValue = settings.returnValue || 50; // Initialize return value
+let oldValue = settings.oldValue || 50; // Initialize old value
 
 //VEGAS PRICE
 async function findJackpotNumberSocket(name, io, init = false, settings, exceptNum = null) {
@@ -67,7 +67,7 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
         let diff = null; // Initialize the diff value as null
         let drop = false; // Initialize drop variable
      // SELECTE IP LOCGIC  Filter IP addresses where status = 0 and credit > 0
-     let availableIps = result.filter((item) => item.status === 0 && parseFloat(item.bet) > 0).map((item) => item.ip);
+     let availableIps = result.filter((item) => item.status === 1 && parseFloat(item.bet) > 0).map((item) => item.ip);
 
      let selectedIp = settings.selectedIp;  // Start with the current selected IP
 
@@ -89,7 +89,7 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
      console.log(`Only one IP available, selected: ${settings.selectedIp}`);
      } else {
      // No IPs available
-     console.log("Lucky prize. No IP with status = 0 available, skipping IP emit");
+     console.log("vegas prize. No IP with status = 0 available, skipping IP emit");
      }
         // Emit the initial averageCredit if it's the first run
         if (previousAverageCredit === null) {
@@ -143,7 +143,14 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
             io.emit(name, emitData);
             console.log(`#VEGAS.${timeCount}.${status}:${averageCredit},${diff},${oldValue},${returnValue},${drop},${selectedIp},${settings.percent}`);
           } else {
-            console.log("VEGAS PRIZE. DROPPED!!");
+            console.log(`VEGAS PRIZE. DROPPED!! | selectedIp: ${selectedIp} value: ${returnValue}, timeCount: ${timeCount},hasDrop ${hasDropped}`);
+            // jackpotDropFunction.createJackpotDrop({ 
+            //   name: "VEGAS PRIZE", 
+            //   value: returnValue,                     
+            //   status: drop,                  
+            //   count: timeCount,                     
+            //   machineId: selectedIp,                  
+            // });
           }
         }
         // If drop condition is met, keep the returnValue as oldValue

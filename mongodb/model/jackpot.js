@@ -42,7 +42,7 @@ const JackpotSchema = new mongoose.Schema({
         type:Number,
     },
     
-})
+});
 
 
 const Jackpots = mongoose.model("jackpots", JackpotSchema);

@@ -8,7 +8,7 @@ const dboperation_time = require('../mongodb/mongo_operation.time');
 const dboperation_time_function = require('../mongodb/mongo_function.time');
 //jackpot function
 const dboperation_jackpot_function = require('../mongodb/mongo_function.jackpot');
-const dboperation_jackpot_function2 = require('../mongodb/mongo_function.jackpot2');
+// const dboperation_jackpot_function2 = require('../mongodb/mongo_function.jackpot2');
 const apiSettings = {
     topRakingLimit: 10,
     realtimeLimit: 8,
@@ -18,11 +18,11 @@ const apiSettings = {
 
 
 let jackpotSettings = {
-    returnValue: 200,  // Default value
-    oldValue: 200,     // Default value
-    defaultThreshold: 265,
-    limit: 300,
-    percent: 0.002,
+    returnValue: 50,  // Default value
+    oldValue: 50,     // Default value
+    defaultThreshold: 75,
+    limit: 100,
+    percent: 0.05,
     throttleInterval: 7, // 7 seconds interval between each run
     selectedIp : null,
 }
@@ -33,7 +33,7 @@ let jackpot2Settings = {
     defaultThreshold: 55,
     limit: 70,
     percent: 0.001,
-    throttleInterval: 6, // 6 seconds interval between each run
+    throttleInterval: 7, // 6 seconds interval between each run
     selectedIp: null,
 }
 
@@ -63,20 +63,20 @@ function handleSocketIO(io) {
             if (!cronJobRunning) {
                 console.log('Starting cronJob2...');
                 cronJob2 = cron.schedule('*/7 * * * * *', () => {
-                    console.log("selectedIP 1:",jackpotSettings.selectedIp);
+                    console.log("selectedIP 1 vegas:",jackpotSettings.selectedIp);
                     dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber', io, false, jackpotSettings,jackpot2Settings.selectedIp);
                 });
                 cronJobRunning = true;
             }
-            // Start cronJob3 (lucky prize) if it's not running
-            if (!cronJobRunningsub) {
-                console.log('Starting cronJob3...');
-                cronJob3 = cron.schedule('*/6 * * * * *', () => {
-                    console.log("selectedIP 2:",jackpot2Settings.selectedIp);
-                    dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number', io, false, jackpot2Settings,jackpotSettings.selectedIp);
-                });
-                cronJobRunningsub = true; 
-            }
+            // // Start cronJob3 (lucky prize) if it's not running
+            // if (!cronJobRunningsub) {
+            //     console.log('Starting cronJob3...');
+            //     cronJob3 = cron.schedule('*/7 * * * * *', () => {
+            //         console.log("selectedIP 2 lucky:",jackpot2Settings.selectedIp);
+            //         dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number', io, false, jackpot2Settings,jackpotSettings.selectedIp);
+            //     });
+            //     cronJobRunningsub = true; 
+            // }
 
             socket.on('eventFromClient2_force', (data) => {
                 dboperation_socketio.findListRankingSocket('eventFromServerMongo', io, true, apiSettings.topRakingLimit);
@@ -117,27 +117,21 @@ function handleSocketIO(io) {
             socket.on('emitToggleDisplayRealTop', (data) => {
                 dboperation_socketio.findListDisplayRealTopSocket('eventFromServerToggle', io);
             });
-
-
-
             // Handle getting settings from the database
             socket.on('emitSetting', async () => {
                 console.log('getSetting acess');
                 dboperation_mysql.findSettingSocket('eventSetting',io);
             });
-            
             //emitTime Socket
             socket.on('emitTime', async () => {
                 console.log('emitTime acess');
                 dboperation_time_function.findTimeFirstSocket('eventTime',io);
             });
-
             //updateTime Socket
             socket.on('updateTime', async (updateData) => {
                 console.log('Update Time access without ID');
                 dboperation_time_function.updateTimeByIdSocket('eventTime', io, updateData);
             });
-
 
             //jackpot socket from mongodb
             socket.on('emitJackpot', async () => {
@@ -153,10 +147,9 @@ function handleSocketIO(io) {
             });
             //jackot socket from mysql 
             socket.on('emitJackpot2Number', async () => {
-                console.log('lucky prize. jackpot acess number');
-                dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number',io,false,jackpot2Settings);
+                // console.log('lucky prize. jackpot acess number');
+                // dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number',io,false,jackpot2Settings);
             });
-
 
             //jackot socket from mysql 
             socket.on('emitJackpotNumberInitial', async () => {
@@ -165,8 +158,8 @@ function handleSocketIO(io) {
             });
             //jackot 2  socket from mysql 
             socket.on('emitJackpot2NumberInitial', async () => {
-                console.log('jackpot 2 acess number initial');
-                dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number',io,true,jackpot2Settings);
+                // console.log('jackpot 2 acess number initial');
+                // dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number',io,true,jackpot2Settings);
             });
             // Listen for 'updateJackpotSettings' 
             socket.on('updateJackpotSetting', (newSettings) => {
@@ -182,13 +175,13 @@ function handleSocketIO(io) {
 
             // Listen for 'updateJackpot2Settings'
             socket.on('updateJackpot2Setting', (newSettings) => {
-                console.log('Received jackpot2 settings from Flutter:', newSettings);
-                jackpot2Settings = {
-                    ...jackpot2Settings,  // Spread operator to maintain the structure and overwrite specific fields
-                    ...newSettings       // Overwriting only the provided new settings
-                };
-                console.log('Updated jackpot2 settings:', jackpot2Settings);
-                io.emit('jackpot2SettingsUpdated', jackpot2Settings);
+                // console.log('Received jackpot2 settings from Flutter:', newSettings);
+                // jackpot2Settings = {
+                //     ...jackpot2Settings,  // Spread operator to maintain the structure and overwrite specific fields
+                //     ...newSettings       // Overwriting only the provided new settings
+                // };
+                // console.log('Updated jackpot2 settings:', jackpot2Settings);
+                // io.emit('jackpot2SettingsUpdated', jackpot2Settings);
             });
     
             socket.on('disconnect', () => {
