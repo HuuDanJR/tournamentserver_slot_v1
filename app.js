@@ -1,7 +1,7 @@
 const express = require('express')
 const body_parser = require('body-parser')
 const cors = require('cors')
-const app = express(); 
+const app = express();
 const router = express.Router();
 const http = require('http').createServer(app);  // Use the same http instance for express and socket.io
 const io = require('socket.io')(http);
@@ -28,21 +28,24 @@ app.use('/api', rankingRoutes);
 //TIME ROUTE
 const timeRoutes = require('./mongodb/mongo_operation.time');
 app.use('/api/time', timeRoutes);
-//STREAM ROUTE 
+//STREAM ROUTE
 const streamRoutes = require('./mongodb/mongo_operation.stream');
 app.use('/api/stream', streamRoutes);
-//JACKPOT ROUTE 
+//JACKPOT ROUTE
 const jackpotRoutes = require('./mongodb/mongo_operation.jackpot');
 app.use('/api/jackpot',jackpotRoutes);
-
-//JACKPOT DROP  ROUTE 
+const memberRoutes = require('./mongodb/mongo_operation_member');
+app.use('/api/member',memberRoutes);
+const deviceRoutes = require('./mongodb/mongo_operation_device');
+app.use('/api/device',deviceRoutes);
+//JACKPOT DROP  ROUTE
 const jackpotDropRoutes = require('./mongodb/mongo_operation.jackpot_drop');
 app.use('/api/jackpot_drop',jackpotDropRoutes);
 
 
 
 const port = process.env.PORT || 8086;
-http.listen(port, () => { 
+http.listen(port, () => {
     console.log('app running at port: ' + port);
 });
 

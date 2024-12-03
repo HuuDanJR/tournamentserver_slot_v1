@@ -9,6 +9,8 @@ const dboperation_time_function = require('../mongodb/mongo_function.time');
 //jackpot function
 const dboperation_jackpot_function = require('../mongodb/mongo_function.jackpot');
 // const dboperation_jackpot_function2 = require('../mongodb/mongo_function.jackpot2');
+const dboperation_device_function = require('../mongodb/mongo_function_device')
+
 const apiSettings = {
     topRakingLimit: 10,
     realtimeLimit: 8,
@@ -75,17 +77,17 @@ function handleSocketIO(io) {
             //         console.log("selectedIP 2 lucky:",jackpot2Settings.selectedIp);
             //         dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number', io, false, jackpot2Settings,jackpotSettings.selectedIp);
             //     });
-            //     cronJobRunningsub = true; 
+            //     cronJobRunningsub = true;
             // }
 
             socket.on('eventFromClient2_force', (data) => {
                 dboperation_socketio.findListRankingSocket('eventFromServerMongo', io, true, apiSettings.topRakingLimit);
             });
-            
+
             socket.on('eventFromClient_force', (data) => {
                 dboperation_socketio.findDataSocketFull('eventFromServer', io, true, apiSettings.realtimeLimit);
             });
-    
+
             socket.on('changeLimitTopRanking', (newLimit) => {
                 console.log(`Received new limit TOPRANKING from UI: ${newLimit}`);
                 apiSettings.topRakingLimit = newLimit;
@@ -96,7 +98,7 @@ function handleSocketIO(io) {
                 apiSettings.realtimeLimit = newLimit;
                 console.log(`Updated changeLimitRealTimeRanking to: ${apiSettings.realtimeLimit}`);
             });
-    
+
             socket.on('eventFromClientDelete', (data) => {
                 const stationIdToDelete = data.stationId;
                 dboperation_socketio.deleteStationDataSocketWName('eventFromServer', io, stationIdToDelete);
@@ -107,13 +109,19 @@ function handleSocketIO(io) {
                 dboperation_socketio.addStationDataSocketWName('eventFromServer', io, machine, member, bet, credit, connect, status, aft, lastupdate);
                 dboperation_socketio.findStationDataSocketWName('eventFromServer', io);
             });
-    
-    
-            //TOGGLE EVENT FROM CLIENT 
+
+            //EVENT DEVICE
+            socket.on('emitDevice', (data) => {
+                console.log('eventDevice access ')
+                dboperation_device_function.listDevices('eventDevice', io, );
+            });
+
+
+            //TOGGLE EVENT FROM CLIENT
             socket.on('emitToggleDisplay', (data) => {
                 dboperation_socketio.findListDisplaySocket('eventFromServerToggle', io);
             });
-            //TOGGLE EVENT FROM CLIENT 
+            //TOGGLE EVENT FROM CLIENT
             socket.on('emitToggleDisplayRealTop', (data) => {
                 dboperation_socketio.findListDisplayRealTopSocket('eventFromServerToggle', io);
             });
@@ -138,30 +146,30 @@ function handleSocketIO(io) {
                 console.log('jackpot acess');
                 dboperation_jackpot_function.findJackpotPriceSocket('eventJackpot',io);
             });
-            
 
-            //jackot socket from mysql 
+
+            //jackot socket from mysql
             socket.on('emitJackpotNumber', async () => {
                 console.log('vegas prize. jackpot acess number');
                 dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,false,jackpotSettings);
             });
-            //jackot socket from mysql 
+            //jackot socket from mysql
             socket.on('emitJackpot2Number', async () => {
                 // console.log('lucky prize. jackpot acess number');
                 // dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number',io,false,jackpot2Settings);
             });
 
-            //jackot socket from mysql 
+            //jackot socket from mysql
             socket.on('emitJackpotNumberInitial', async () => {
                 console.log('jackpot acess number initial');
                 dboperation_jackpot_function.findJackpotNumberSocket('eventJackpotNumber',io,true,jackpotSettings);
             });
-            //jackot 2  socket from mysql 
+            //jackot 2  socket from mysql
             socket.on('emitJackpot2NumberInitial', async () => {
                 // console.log('jackpot 2 acess number initial');
                 // dboperation_jackpot_function2.findJackpot2NumberSocket('eventJackpot2Number',io,true,jackpot2Settings);
             });
-            // Listen for 'updateJackpotSettings' 
+            // Listen for 'updateJackpotSettings'
             socket.on('updateJackpotSetting', (newSettings) => {
                 console.log('Received jackpot settings from Flutter:', newSettings);
                 // Update the current jackpot settings with the new ones received from Flutter
@@ -183,7 +191,7 @@ function handleSocketIO(io) {
                 // console.log('Updated jackpot2 settings:', jackpot2Settings);
                 // io.emit('jackpot2SettingsUpdated', jackpot2Settings);
             });
-    
+
             socket.on('disconnect', () => {
                 console.log('A user disconnected');
                 cronJob.stop();
