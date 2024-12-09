@@ -17,10 +17,12 @@ const DisplaySchemaRealTop = new mongoose.Schema({
         default:"display page"
     },
     createdAt: {
-        default: Date.now(),
+        default: () => moment().tz("Asia/Bangkok").toLocaleString('en-US', {
+            timeZone: 'Asia/Bangkok'
+        }),
         type: Date,
     },
-    
+
 })
 
 

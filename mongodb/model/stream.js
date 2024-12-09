@@ -13,19 +13,23 @@ const StreamSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    active: { 
+    active: {
         type:Boolean,
         required:true,
         default:false,
     },
     createdAt: {
         type: Date,
-        default: () => moment().tz("Asia/Bangkok").toDate(),
+        default: () => moment().tz("Asia/Bangkok").toLocaleString('en-US', {
+            timeZone: 'Asia/Bangkok'
+        }),
         required: true
     },
     updateAt: {
         type: Date,
-        default: () => moment().tz("Asia/Bangkok").toDate(),
+        default: () => moment().tz("Asia/Bangkok").toLocaleString('en-US', {
+            timeZone: 'Asia/Bangkok'
+        }),
         required: true
     },
 });

@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const moment = require('moment-timezone')
 
 const MemberSchema = new mongoose.Schema({
-   
+
     name:{
         required:true,
         type:String,
@@ -25,21 +25,21 @@ const MemberSchema = new mongoose.Schema({
         type:String,
     },
     deviceInfo:{
-       type:String, 
+       type:String,
     },
     createdAt: {
         default: () => moment().tz("Asia/Bangkok").toLocaleString('en-US', {
             timeZone: 'Asia/Bangkok'
-          }),
+        }),
         required:true,type:Date,
     },
     updateAt:{
         default: () => moment().tz("Asia/Bangkok").toLocaleString('en-US', {
             timeZone: 'Asia/Bangkok'
-          }),
+        }),
         required:true,type:Date,
     }
-   
+
 })
 
 const Member = mongoose.model("members", MemberSchema);

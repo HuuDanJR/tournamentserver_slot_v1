@@ -11,7 +11,7 @@ router.route('/all_jackpot_drop').get(async (req, res) => {
       return res.status(404).json({message:"Cannot find any jackpot drop  ",data:jackpot,status:false});
     }
     res.json({status:true,message:"Find jackpot drop all",data:jackpot,});
-  
+
   } catch (error) {
      res.status(500).json({ message: 'Error creating jackpot drop', error });
   }
@@ -65,6 +65,22 @@ router.route('/create_jackpot_drop').post(async (req, res) => {
     res.status(500).json({ message: 'Error creating new jackpot drop', error });
   }
 });
+
+router.route('/delete_jackpot_drop/:id').delete(async (req, res) => {
+  try {
+    const deleteJackpot = await Jackpot.findOneAndDelete({ id: req.params.id });
+
+    if (!deleteJackpot) {
+      return res.status(404).json({ message: `Jackpot with id "${req.params.id}" not found` });
+    }
+
+    res.status(200).json({ message: `Jackpot with id "${req.params.id}" was successfully deleted.` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error deleting jackpot', error });
+  }
+});
+
 
 //export router for use
 module.exports = router;

@@ -1,10 +1,7 @@
 const connection = require("../mysql/mysql_dbconfig");
 const settings = require("../socket/socket_handler.js");
 const settings2 = require("../socket/socket_handler.js");
-const jackpotDropFunction = require('./mongo_function.jackpot_drop.js')
-
-
-
+const jackpotDropFunction = require("./mongo_function.jackpot_drop.js");
 
 let lastExecutionTime = 0;
 let previousAverageCredit = null; // Track the previous averageCredit
@@ -14,7 +11,14 @@ let returnValue = settings.returnValue || 50; // Initialize return value
 let oldValue = settings.oldValue || 50; // Initialize old value
 
 //VEGAS PRICE
-async function findJackpotNumberSocket(name, io, init = false, settings, exceptNum = null) {
+async function findJackpotNumberSocket(
+  name,
+  io,
+  init = false,
+  settings,
+  exceptNum = null,
+  cronjob
+) {
   try {
     if (init) {
       // Reset flags and values when init is true
@@ -40,7 +44,11 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
       };
 
       io.emit(name, defaultData);
-      console.log( `Init condition met, emitting default data: ${JSON.stringify(defaultData )}`);
+      console.log(
+        `Init condition met, emitting default data: ${JSON.stringify(
+          defaultData
+        )}`
+      );
       // return; // Exit the function after emitting default data
     }
 
@@ -63,34 +71,42 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
         let newCredits = result.map((item) => parseFloat(item.bet) / 100);
         // Sum the credits and calculate the average
         let totalCredit = newCredits.reduce((sum, bet) => sum + bet, 0);
-        let averageCredit = (totalCredit / newCredits.length) * settings.percent;
+        let averageCredit =
+          (totalCredit / newCredits.length) * settings.percent;
         let diff = null; // Initialize the diff value as null
         let drop = false; // Initialize drop variable
-     // SELECTE IP LOCGIC  Filter IP addresses where status = 0 and credit > 0
-     let availableIps = result.filter((item) => item.status === 1 && parseFloat(item.bet) > 0).map((item) => item.ip);
+        // SELECTE IP LOCGIC  Filter IP addresses where status = 0 and credit > 0
+        let availableIps = result
+          .filter((item) => item.status === 0 && parseFloat(item.bet) > 0)
+          .map((item) => item.ip);
 
-     let selectedIp = settings.selectedIp;  // Start with the current selected IP
+        let selectedIp = settings.selectedIp; // Start with the current selected IP
 
-     if (availableIps.length > 1) {
-     // More than one IP available, exclude exceptNum and select a random one
-     availableIps = availableIps.filter(ip => ip !== exceptNum);
+        if (availableIps.length > 1) {
+          // More than one IP available, exclude exceptNum and select a random one
+          availableIps = availableIps.filter((ip) => ip !== exceptNum);
 
-     // Only proceed if there are still IPs left after filtering
-     if (availableIps.length > 0) {
-     selectedIp = availableIps[Math.floor(Math.random() * availableIps.length)];
-     console.log(`Selected IP VEGAS FUNCTION: ${selectedIp}`);
-     settings.selectedIp = selectedIp;
-     } else {
-     console.log(`No available IP 1  after excluding ${exceptNum}`);
-     }
-     } else if (availableIps.length === 1) {
-     // Exactly one IP available, assign the exceptNum as the selected IP
-     settings.selectedIp = availableIps[0];
-     console.log(`Only one IP available, selected: ${settings.selectedIp}`);
-     } else {
-     // No IPs available
-     console.log("vegas prize. No IP with status = 0 available, skipping IP emit");
-     }
+          // Only proceed if there are still IPs left after filtering
+          if (availableIps.length > 0) {
+            selectedIp =
+              availableIps[Math.floor(Math.random() * availableIps.length)];
+            console.log(`Selected IP VEGAS FUNCTION: ${selectedIp}`);
+            settings.selectedIp = selectedIp;
+          } else {
+            console.log(`No available IP 1  after excluding ${exceptNum}`);
+          }
+        } else if (availableIps.length === 1) {
+          // Exactly one IP available, assign the exceptNum as the selected IP
+          settings.selectedIp = availableIps[0];
+          console.log(
+            `Only one IP available, selected: ${settings.selectedIp}`
+          );
+        } else {
+          // No IPs available
+          console.log(
+            "vegas prize. No IP with status = 0 available, skipping IP emit"
+          );
+        }
         // Emit the initial averageCredit if it's the first run
         if (previousAverageCredit === null) {
           initialAverageCredit = averageCredit; // Store the initial averageCredit
@@ -104,7 +120,9 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
             drop,
             selectedIp,
           });
-          console.log(`${timeCount}. init : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${oldValue}, drop: ${drop},selectIp: ${selectedIp}, percent: ${settings.percent}`);
+          console.log(
+            `${timeCount}. init : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${oldValue}, drop: ${drop},selectIp: ${selectedIp}, percent: ${settings.percent}`
+          );
         } else {
           let status; // Compare current averageCredit with the previous one
           if (averageCredit > previousAverageCredit) {
@@ -122,12 +140,14 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
             returnValue = settings.limit; // Set returnValue to the limit
           }
           // Set drop based on the returnValue range
-          drop = returnValue >= settings.defaultThreshold && returnValue <= settings.limit;
+          drop =
+            returnValue >= settings.defaultThreshold &&
+            returnValue <= settings.limit;
           // Emit the averageCredit along with the status only if not dropped
           if (!hasDropped) {
             if (returnValue > settings.limit) {
               returnValue = settings.limit; // Set returnValue to the limit
-            }            
+            }
             const emitData = {
               averageCredit,
               status: "dropped",
@@ -141,16 +161,15 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
               emitData.ip = selectedIp;
             }
             io.emit(name, emitData);
-            console.log(`#VEGAS.${timeCount}.${status}:${averageCredit},${diff},${oldValue},${returnValue},${drop},${selectedIp},${settings.percent}`);
+            console.log(
+              `#VEGAS.${timeCount}.${status}:${averageCredit},${diff},${oldValue},${returnValue},${drop},${selectedIp},${settings.percent}`
+            );
           } else {
-            console.log(`VEGAS PRIZE. DROPPED!! | selectedIp: ${selectedIp} value: ${returnValue}, timeCount: ${timeCount},hasDrop ${hasDropped}`);
-            // jackpotDropFunction.createJackpotDrop({ 
-            //   name: "VEGAS PRIZE", 
-            //   value: returnValue,                     
-            //   status: drop,                  
-            //   count: timeCount,                     
-            //   machineId: selectedIp,                  
-            // });
+            console.log(
+              `VEGAS PRIZE. DROPPED!! | selectedIp: ${selectedIp} prize: ${averageCredit} value: ${returnValue}, timeCount: ${timeCount},hasDrop ${hasDropped}`
+            );
+            //STOP CronJobVegas2
+            cronjob.stop();
           }
         }
         // If drop condition is met, keep the returnValue as oldValue
@@ -171,11 +190,22 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
             if (selectedIp) {
               emitData.ip = selectedIp;
             }
-            io.emit(name, emitData);
-            console.log(`${timeCount}| dropped : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp: ${selectedIp},percent: ${settings.percent}`
+            console.log(
+              `${timeCount}| dropped JP ***** : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp: ${selectedIp},percent: ${settings.percent}`
             );
-          }
-          else if (!hasDropped && selectedIp === exceptNum) {
+            jackpotDropFunction.createJackpotDrop({
+              name: "VEGAS PRIZE",
+              value: returnValue,
+              status: drop,
+              count: timeCount,
+              machineId: selectedIp,
+            });
+            // Wait for 5 seconds
+             await delay(5000);
+            io.emit(name, emitData);
+            cronjob.stop();
+
+          } else if (!hasDropped && selectedIp === exceptNum) {
             hasDropped = true; // Set dropped state
             const emitData = {
               averageCredit,
@@ -190,7 +220,8 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
               emitData.ip = exceptNum;
             }
             io.emit(name, emitData);
-            console.log(`${timeCount}| dropped dropped with exceptNum : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp: ${exceptNum},percent: ${settings.percent}`
+            console.log(
+              `${timeCount}| dropped dropped with exceptNum : ${averageCredit} , diff: ${diff}, oldValue: ${oldValue}, value: ${returnValue}, drop: ${drop},selectedIp: ${exceptNum},percent: ${settings.percent}`
             );
           }
         } else {
@@ -205,39 +236,6 @@ async function findJackpotNumberSocket(name, io, init = false, settings, exceptN
     throw new Error("Error fetching jackpot number records: " + error.message);
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Function to find settings and emit them to the client
 async function findJackpotAllSocket(name, io) {
@@ -271,10 +269,15 @@ async function findJackpotPriceSocket(name, io) {
   }
 }
 
-
 //export router for use
 module.exports = {
   findJackpotAllSocket: findJackpotAllSocket,
   findJackpotPriceSocket: findJackpotPriceSocket,
   findJackpotNumberSocket: findJackpotNumberSocket,
 };
+
+
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

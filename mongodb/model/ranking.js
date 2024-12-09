@@ -18,10 +18,12 @@ const RankingSchema = new mongoose.Schema({
         type:Number,
     },
     createdAt: {
-        default: Date.now(),
+        default: () => moment().tz("Asia/Bangkok").toLocaleString('en-US', {
+            timeZone: 'Asia/Bangkok'
+        }),
         type: Date,
     },
-    
+
 })
 
 

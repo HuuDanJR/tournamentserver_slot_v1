@@ -1,7 +1,8 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const moment = require('moment');
 
 const JackpotHitSchema = new mongoose.Schema({
-   
+
     name:{
         required:true,
         type:String
@@ -23,12 +24,16 @@ const JackpotHitSchema = new mongoose.Schema({
         default:true,
     },
     createdAt: {
-        default: Date.now(),
+        default: () => moment().tz("Asia/Bangkok").toLocaleString('en-US', {
+            timeZone: 'Asia/Bangkok'
+        }),
         type: Date,
     },
-   
-    
-    
+
+
+
+
+
 })
 
 

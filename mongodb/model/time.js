@@ -17,21 +17,25 @@ const TimeSchema = new mongoose.Schema({
         type: Number,
         default:0,
         required: true,
-        // 0 : init | 1 : ticking | 2 : pause | 3 : stop  | 4 restart 
+        // 0 : init | 1 : ticking | 2 : pause | 3 : stop  | 4 restart
     },
-    active: { 
+    active: {
         type:Boolean,
         required:true,
         default:false,
     },
     createdAt: {
         type: Date,
-        default: () => moment().tz("Asia/Bangkok").toDate(),
+        default: () => moment().tz("Asia/Bangkok").toLocaleString('en-US', {
+            timeZone: 'Asia/Bangkok'
+        }),
         required: true
     },
     updateAt: {
         type: Date,
-        default: () => moment().tz("Asia/Bangkok").toDate(),
+        default: () => moment().tz("Asia/Bangkok").toLocaleString('en-US', {
+            timeZone: 'Asia/Bangkok'
+        }),
         required: true
     },
 });
